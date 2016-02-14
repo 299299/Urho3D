@@ -62,6 +62,7 @@ static void RegisterCustomLibrary(Context* context)
     engine->RegisterObjectMethod("TailGenerator", "void SetEndColor(const Color&in, const Color&in)", asMETHOD(TailGenerator, SetEndColor), asCALL_THISCALL);
     engine->RegisterObjectMethod("TailGenerator", "void SetArcValue(float, float)", asMETHOD(TailGenerator, SetArcValue), asCALL_THISCALL);
     engine->RegisterObjectMethod("TailGenerator", "void set_relativePosition(bool)", asMETHOD(TailGenerator, SetRelativePosition), asCALL_THISCALL);
+    engine->RegisterObjectMethod("Camera", "Matrix4 GetProjection(bool) const", asMETHODPR(Camera, GetProjection, (bool) const, Matrix4), asCALL_THISCALL);
 #endif
 }
 
