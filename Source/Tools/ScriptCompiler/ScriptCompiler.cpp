@@ -37,7 +37,6 @@
 #ifdef URHO3D_ANGELSCRIPT
 #include <Urho3D/AngelScript/APITemplates.h>
 #endif
-#include "TailGenerator.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -46,25 +45,6 @@
 #include <Urho3D/DebugNew.h>
 
 using namespace Urho3D;
-
-static void RegisterCustomLibrary(Context* context)
-{
-#ifdef URHO3D_ANGELSCRIPT
-    Script* script = context->GetSubsystem<Script>();
-    asIScriptEngine* engine = script->GetScriptEngine();
-    RegisterDrawable<TailGenerator>(engine, "TailGenerator");
-    engine->RegisterObjectMethod("TailGenerator", "void set_material(Material@+)", asMETHOD(TailGenerator, SetMaterial), asCALL_THISCALL);
-    engine->RegisterObjectMethod("TailGenerator", "void set_endNodeName(const String&in)", asMETHOD(TailGenerator, SetEndNodeName), asCALL_THISCALL);
-    engine->RegisterObjectMethod("TailGenerator", "void set_width(float)", asMETHOD(TailGenerator, SetWidth), asCALL_THISCALL);
-    engine->RegisterObjectMethod("TailGenerator", "void set_tailNum(int)", asMETHOD(TailGenerator, SetTailNum), asCALL_THISCALL);
-    engine->RegisterObjectMethod("TailGenerator", "void SetStartColor(const Color&in, const Color&in)", asMETHOD(TailGenerator, SetStartColor), asCALL_THISCALL);
-    engine->RegisterObjectMethod("TailGenerator", "void SetEndColor(const Color&in, const Color&in)", asMETHOD(TailGenerator, SetEndColor), asCALL_THISCALL);
-    engine->RegisterObjectMethod("TailGenerator", "void SetArcValue(float, float)", asMETHOD(TailGenerator, SetArcValue), asCALL_THISCALL);
-    engine->RegisterObjectMethod("TailGenerator", "void set_relativePosition(bool)", asMETHOD(TailGenerator, SetRelativePosition), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Camera", "Matrix4 GetProjection(bool) const", asMETHODPR(Camera, GetProjection, (bool) const, Matrix4), asCALL_THISCALL);
-#endif
-}
-
 
 void CompileScript(Context* context, const String& fileName);
 
@@ -130,8 +110,6 @@ int main(int argc, char** argv)
 
     log->SetLevel(LOG_WARNING);
     log->SetTimeStamp(false);
-
-    RegisterCustomLibrary(context);
 
     if (!dumpApiMode)
     {

@@ -38,33 +38,11 @@
 #include <Urho3D/AngelScript/APITemplates.h>
 #endif
 
-#include "TailGenerator.h"
 #include "Urho3DPlayer.h"
 
 #include <Urho3D/DebugNew.h>
 
 URHO3D_DEFINE_APPLICATION_MAIN(Urho3DPlayer);
-
-static void RegisterCustomLibrary(Context* context)
-{
-    // register custom components
-    TailGenerator::RegisterObject(context);
-
-#ifdef URHO3D_ANGELSCRIPT
-    Script* script = context->GetSubsystem<Script>();
-    asIScriptEngine* engine = script->GetScriptEngine();
-    RegisterDrawable<TailGenerator>(engine, "TailGenerator");
-    engine->RegisterObjectMethod("TailGenerator", "void set_material(Material@+)", asMETHOD(TailGenerator, SetMaterial), asCALL_THISCALL);
-    engine->RegisterObjectMethod("TailGenerator", "void set_endNodeName(const String&in)", asMETHOD(TailGenerator, SetEndNodeName), asCALL_THISCALL);
-    engine->RegisterObjectMethod("TailGenerator", "void set_width(float)", asMETHOD(TailGenerator, SetWidth), asCALL_THISCALL);
-    engine->RegisterObjectMethod("TailGenerator", "void set_tailNum(int)", asMETHOD(TailGenerator, SetTailNum), asCALL_THISCALL);
-    engine->RegisterObjectMethod("TailGenerator", "void SetStartColor(const Color&in, const Color&in)", asMETHOD(TailGenerator, SetStartColor), asCALL_THISCALL);
-    engine->RegisterObjectMethod("TailGenerator", "void SetEndColor(const Color&in, const Color&in)", asMETHOD(TailGenerator, SetEndColor), asCALL_THISCALL);
-    engine->RegisterObjectMethod("TailGenerator", "void SetArcValue(float, float)", asMETHOD(TailGenerator, SetArcValue), asCALL_THISCALL);
-    engine->RegisterObjectMethod("TailGenerator", "void set_relativePosition(bool)", asMETHOD(TailGenerator, SetRelativePosition), asCALL_THISCALL);
-    engine->RegisterObjectMethod("Camera", "Matrix4 GetProjection(bool) const", asMETHODPR(Camera, GetProjection, (bool) const, Matrix4), asCALL_THISCALL);
-#endif
-}
 
 Urho3DPlayer::Urho3DPlayer(Context* context) :
     Application(context)
@@ -163,8 +141,6 @@ void Urho3DPlayer::Start()
         // Instantiate and register the AngelScript subsystem
         context_->RegisterSubsystem(new Script(context_));
 
-        RegisterCustomLibrary(context_);
-
         // Hold a shared pointer to the script file to make sure it is not unloaded during runtime
         scriptFile_ = GetSubsystem<ResourceCache>()->GetResource<ScriptFile>(scriptFileName_);
 
@@ -193,8 +169,6 @@ void Urho3DPlayer::Start()
         // Instantiate and register the Lua script subsystem
         LuaScript* luaScript = new LuaScript(context_);
         context_->RegisterSubsystem(luaScript);
-
-        RegisterCustomLibrary(context_);
 
         // If script loading is successful, proceed to main loop
         if (luaScript->ExecuteFile(scriptFileName_))
