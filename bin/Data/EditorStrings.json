@@ -1392,6 +1392,9 @@
 		"it":"Colore"
 	},
 	"Tags":{
-		"en":"Tags"
+		"en":"Tags",
+		"ru":"Теги",
+		"fr":"Étiquettes",
+		"it":"Etichette"
 	}
 }
