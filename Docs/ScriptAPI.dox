@@ -164,7 +164,6 @@ namespace Urho3D
 ### KeyDown
 - %Key : int
 - %Scancode : int
-- %Raw : uint
 - %Buttons : int
 - %Qualifiers : int
 - %Repeat : bool
@@ -172,7 +171,6 @@ namespace Urho3D
 ### KeyUp
 - %Key : int
 - %Scancode : int
-- %Raw : uint
 - %Buttons : int
 - %Qualifiers : int
 
@@ -14967,6 +14965,7 @@ Properties:
 - uint GetFloat16Format()
 - uint GetFloat32Format()
 - uint GetFormat(const String&)
+- Variant GetGlobalVar(const String&)
 - String GetInternalPath(const String&)
 - uint GetLinearDepthFormat()
 - uint GetLuminanceAlphaFormat()
@@ -15028,6 +15027,7 @@ Properties:
 - String ReplaceExtension(const String&, const String&)
 - uint SDBMHash(uint, uint8)
 - void SendEvent(const String&, VariantMap& = VariantMap ( ))
+- void SetGlobalVar(const String&, Variant&)
 - void SetMiniDumpDir(const String&)
 - void SetRandomSeed(uint)
 - float Sign(float)
@@ -15057,6 +15057,7 @@ Properties:
 - DebugRenderer@ debugRenderer
 - Engine@ engine
 - FileSystem@ fileSystem
+- VariantMap globalVars
 - Graphics@ graphics
 - Input@ input
 - Localization@ localization
@@ -15291,6 +15292,7 @@ Properties:
 - uint M_MIN_UNSIGNED
 - float M_PI
 - float M_RADTODEG
+- uint NPOS
 - float PIXEL_SIZE
 - int QUALITY_HIGH
 - int QUALITY_LOW
@@ -15561,7 +15563,6 @@ Properties:
 - uint VO_NONE
 - Color WHITE
 - Color YELLOW
-- VariantMap globalVars
 */
 
 }
