@@ -1114,9 +1114,20 @@ void Image::ClearInt(unsigned uintColor)
         return;
     }
 
-    unsigned char* src = (unsigned char*)&uintColor;
-    for (unsigned i = 0; i < width_ * height_ * depth_ * components_; ++i)
-        data_[i] = src[i % components_];
+    if (components_ == 4)
+    {
+        unsigned color = uintColor;
+        unsigned* data = (unsigned*)GetData();
+        unsigned* data_end = (unsigned*)(GetData() + width_ * height_ * depth_ * components_);
+        for (; data < data_end; ++data)
+            *data = color;
+    }
+    else
+    {
+        unsigned char* src = (unsigned char*)&uintColor;
+        for (unsigned i = 0; i < width_ * height_ * depth_ * components_; ++i)
+            data_[i] = src[i % components_];
+    }
 }
 
 bool Image::SaveBMP(const String& fileName) const
