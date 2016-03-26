@@ -34,6 +34,7 @@ Urho3D development, contributions and bugfixes by:
 - Gunnar Kriik
 - Ali Kämäräinen
 - Pete Leigh
+- Frode 'Modanung' Lindeijer
 - Thorbjørn Lindeijer
 - Xavier Maupeu
 - Jonne Nauha
@@ -59,7 +60,6 @@ Urho3D development, contributions and bugfixes by:
 - Lumak
 - Magic.Lixin
 - Mike3D
-- Modanung
 - MonkeyFirst
 - Newb I the Newbd
 - OvermindDL1

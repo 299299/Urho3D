@@ -297,7 +297,6 @@ end
 # Usage: NOT intended to be used manually
 desc 'Configure, build, and test Urho3D project'
 task :ci do
-  $start_time = Time.now - ENV['ELAPSED'].to_i if ENV['ELAPSED']
   next if timeup    # Measure the VM overhead
   # Skip if only performing CI for selected branches and the current branch is not in the list
   unless ENV['RELEASE_TAG']
@@ -327,7 +326,7 @@ task :ci do
     system "bash -c 'git fetch --unshallow'" or abort 'Failed to unshallow cloned repository'
   end
   # Show CMake version
-  system "bash -c 'echo && cmake --version && echo'" or abort 'Failed to find CMake'
+  system "bash -c 'cmake --version && echo'" or abort 'Failed to find CMake'
   # Using out-of-source build tree when using Travis-CI; 'build_tree' environment variable is already set when on AppVeyor
   ENV['build_tree'] = '../Build' unless ENV['APPVEYOR']
   # Always use a same build configuration to keep ccache's cache size small; single-config generator needs the option when configuring, while multi-config when building
@@ -387,7 +386,7 @@ task :ci do
     end
   end
   # Make, deploy, and test run Android APK in an Android (virtual) device
-  if ENV['AVD'] && !ENV['PACKAGE_UPLOAD']
+  if ENV['AVD'] && !ENV['PACKAGE_UPLOAD'] && !timeup
     puts "\nTest deploying and running Urho3D Samples APK..."
     Dir.chdir '../Build' do
       system 'android update project -p . && ant debug' or abort 'Failed to make Urho3D Samples APK'
@@ -442,7 +441,6 @@ desc 'Update site on GitHub Pages (and source tree on GitHub while we are at it)
 task :ci_site_update do
   # Skip when :ci rake task was skipped
   next unless File.exist?('../Build/CMakeCache.txt')
-  $start_time = Time.now - ENV['ELAPSED'].to_i if ENV['ELAPSED']
   next if timeup
   puts "Updating site...\n\n"
   system 'git clone --depth 1 -q https://github.com/urho3d/urho3d.github.io.git ../urho3d.github.io' or abort 'Failed to clone urho3d/urho3d.github.io'
@@ -485,7 +483,6 @@ end
 # Usage: NOT intended to be used manually
 desc 'Update web samples to GitHub Pages'
 task :ci_emscripten_samples_update do
-  $start_time = Time.now - ENV['ELAPSED'].to_i if ENV['ELAPSED']
   next if timeup
   puts 'Updating Web samples in main website...'
   system 'git clone --depth 1 -q https://github.com/urho3d/urho3d.github.io.git ../urho3d.github.io' or abort 'Failed to clone urho3d/urho3d.github.io'
@@ -537,7 +534,7 @@ end
 desc 'Delete CI mirror branch'
 task :ci_delete_mirror do
   # Skip if the mirror branch has been forced pushed remotely or when we are performing a release (in case we need to rerun the job to recreate the package)
-  unless `git fetch -qf origin/#{ENV['TRAVIS_BRANCH'] || ENV['APPVEYOR_REPO_BRANCH']} && git log -1 --pretty=format:'%H' origin/#{ENV['TRAVIS_BRANCH'] || ENV['APPVEYOR_REPO_BRANCH']}`.gsub(/'/, '') == (ENV['TRAVIS_COMMIT'] || ENV['APPVEYOR_REPO_COMMIT']).chop && !ENV['RELEASE_TAG']
+  unless `git fetch -qf origin #{ENV['TRAVIS_BRANCH'] || ENV['APPVEYOR_REPO_BRANCH']} && git log -1 --pretty=format:'%H' FETCH_HEAD`.gsub(/'/, '') == (ENV['TRAVIS_COMMIT'] || ENV['APPVEYOR_REPO_COMMIT']).chop && !ENV['RELEASE_TAG']
     # Do not use "abort" here because AppVeyor, unlike Travis, also handles the exit status of the processes invoked in the "on_finish" section of the .appveyor.yml
     # Using "abort" may incorrectly (or correctly, depends on your POV) report the whole CI as failed when the CI mirror branch deletion is being skipped
     $stderr.puts "Skipped deleting #{ENV['TRAVIS_BRANCH'] || ENV['APPVEYOR_REPO_BRANCH']} mirror branch"
@@ -556,7 +553,6 @@ task :ci_package_upload do
   ENV['config'] = 'Release' if ENV['XCODE']
   # Skip when :ci rake task was skipped
   next unless File.exist?("#{ENV['build_tree']}/CMakeCache.txt")
-  $start_time = Time.now - ENV['ELAPSED'].to_i if ENV['ELAPSED']
   next if timeup
   # Generate the documentation if necessary
   if ENV['SITE_UPDATE']
@@ -636,16 +632,24 @@ EOF'" or abort 'Failed to create release directory remotely'
   end
 end
 
+# Usage: NOT intended to be used manually
+desc 'Start/stop the timer'
+task :ci_timer do
+  timeup
+end
+
 # Always call this function last in the multiple conditional check so that the checkpoint message does not being echoed unnecessarily
 def timeup
-  unless $start_time
-    puts; $stdout.flush
+  unless File.exists?('start_time.log')
+    system 'touch start_time.log split_time.log'
     return nil
   end
-  elapsed_time = (Time.now - $start_time) / 60.0
-  puts "\n=== Checkpoint reached, elapsed time: #{elapsed_time.to_i} minutes #{((elapsed_time - elapsed_time.to_i) * 60.0).round} seconds ===\n\n" unless $already_timeup
-  $stdout.flush
-  return $already_timeup = elapsed_time > 40.0
+  current_time = Time.now
+  elapsed_time = (current_time - File.atime('start_time.log')) / 60.0
+  lap_time = (current_time - File.atime('split_time.log')) / 60.0
+  system 'touch split_time.log'
+  puts "\n=== elapsed time: #{elapsed_time.to_i} minutes #{((elapsed_time - elapsed_time.to_i) * 60.0).round} seconds, lap time: #{lap_time.to_i} minutes #{((lap_time - lap_time.to_i) * 60.0).round} seconds ===\n\n" unless File.exists?('already_timeup.log'); $stdout.flush
+  return system('touch already_timeup.log') if elapsed_time > 40.0
 end
 
 def scaffolding dir, project = 'Scaffolding', target = 'Main'
