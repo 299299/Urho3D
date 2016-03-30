@@ -94,4 +94,7 @@ configure*
 *.log
 *.bak
 Thumbs.db
+.directory
+
+
 .build
