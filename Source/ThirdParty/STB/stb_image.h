@@ -209,13 +209,11 @@
 
 LICENSE
 
-This software is in the public domain. Where that dedication is not
-recognized, you are granted a perpetual, irrevocable license to copy,
-distribute, and modify this file as you see fit.
+This software is dual-licensed to the public domain and under the following
+license: you are granted a perpetual, irrevocable license to copy, modify,
+publish, and distribute this file as you see fit.
 
 */
-
-// Modified by Lasse Oorni and Yao Wei Tjong for Urho3D
 
 #ifndef STBI_INCLUDE_STB_IMAGE_H
 #define STBI_INCLUDE_STB_IMAGE_H
@@ -650,11 +648,6 @@ typedef unsigned char validate_uint32[sizeof(stbi__uint32)==4 ? 1 : -1];
 #define STBI__X86_TARGET
 #endif
 
-// Urho3D: do not use SIMD instructions if both URHO3D_SSE and URHO3D_NEON are disabled
-#if !defined(URHO3D_SSE) && !defined(URHO3D_NEON)
-#define STBI_NO_SIMD
-#endif
-
 #if defined(__GNUC__) && (defined(STBI__X86_TARGET) || defined(STBI__X64_TARGET)) && !defined(__SSE2__) && !defined(STBI_NO_SIMD)
 // NOTE: not clear do we actually need this for the 64-bit path?
 // gcc doesn't support sse2 intrinsics unless you compile with -msse2,
@@ -730,8 +723,8 @@ static int stbi__sse2_available()
 #endif
 #endif
 
-// ARM NEON # Urho3D - ensure the target platform supports NEON intrinsic instructions
-#if (defined(STBI_NO_SIMD) || !defined(__ARM_NEON__)) && defined(STBI_NEON)
+// ARM NEON
+#if defined(STBI_NO_SIMD) && defined(STBI_NEON)
 #undef STBI_NEON
 #endif
 
