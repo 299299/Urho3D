@@ -115,7 +115,7 @@ To send an event, fill the event parameters (if necessary) and call \ref Object:
 \code
 using namespace Update;
 
-VariantMap& newEventData = GetEventDataMap();
+VariantMap& eventData = GetEventDataMap();
 eventData[P_TIMESTEP] = timeStep_;
 SendEvent(E_UPDATE, eventData);
 \endcode
