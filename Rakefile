@@ -839,7 +839,7 @@ def wait_for_block comment = '', retries = -1, retry_interval = 60
       thread.kill
       # Also kill the child subproceses spawned by the worker thread
       Signal.trap('INT') {}
-      Process.kill('INT', -Process.pid)
+      Process.kill('INT', -Process.ppid)
       Signal.trap('INT', 'DEFAULT')
       break
     end
