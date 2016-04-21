@@ -362,6 +362,15 @@ public:
         return Iterator(InsertNode(pair.first_, pair.second_));
     }
 
+    /// Insert a pair. Return iterator and set exists flag according to whether the key already existed.
+    Iterator Insert(const Pair<T, U>& pair, bool& exists)
+    {
+        unsigned oldSize = Size();
+        Iterator ret(InsertNode(pair.first_, pair.second_));
+        exists = (Size() == oldSize);
+        return ret;
+    }
+
     /// Insert a map.
     void Insert(const HashMap<T, U>& map)
     {
@@ -543,6 +552,22 @@ public:
 
         unsigned hashKey = Hash(key);
         return FindNode(key, hashKey) != 0;
+    }
+
+    /// Try to copy value to output. Return true if was found.
+    bool TryGetValue(const T& key, U& out)
+    {
+        if (!ptrs_)
+            return false;
+        unsigned hashKey = Hash(key);
+        Node* node = FindNode(key, hashKey);
+        if (node)
+        {
+            out = node->pair_.second_;
+            return true;
+        }
+        else
+            return false;
     }
 
     /// Return all the keys.
