@@ -95,3 +95,4 @@ configure*
 *.bak
 Thumbs.db
 .directory
+.build
