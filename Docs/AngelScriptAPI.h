@@ -5477,6 +5477,7 @@ int y;
 class JSONFile
 {
 // Methods:
+bool FromString(const String&);
 JSONValue& GetRoot();
 bool HasSubscribedToEvent(Object, const String&);
 bool HasSubscribedToEvent(const String&);
@@ -11483,6 +11484,9 @@ int dragButtonCount;
 uint dragDropMode;
 bool editable;
 Color effectColor;
+bool effectRoundStroke;
+IntVector2 effectShadowOffset;
+int effectStrokeThickness;
 bool elementEventSender;
 bool enabled;
 /* readonly */
@@ -11642,6 +11646,9 @@ Array<Color> colors;
 float drawDistance;
 Color effectColor;
 float effectDepthBias;
+bool effectRoundStroke;
+IntVector2 effectShadowOffset;
+int effectStrokeThickness;
 bool enabled;
 /* readonly */
 bool enabledEffective;
