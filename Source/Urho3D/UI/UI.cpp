@@ -824,6 +824,10 @@ void UI::Render(bool resetRenderTargets, VertexBuffer* buffer, const PODVector<U
         if (graphics_->NeedParameterUpdate(SP_MATERIAL, this))
             graphics_->SetShaderParameter(PSP_MATDIFFCOLOR, Color(1.0f, 1.0f, 1.0f, 1.0f));
 
+        float elapsedTime = GetSubsystem<Time>()->GetElapsedTime();
+        graphics_->SetShaderParameter(VSP_ELAPSEDTIME, elapsedTime);
+        graphics_->SetShaderParameter(PSP_ELAPSEDTIME, elapsedTime);
+
         IntRect scissor = batch.scissor_;
         scissor.left_ = (int)(scissor.left_ * uiScale_);
         scissor.top_ = (int)(scissor.top_ * uiScale_);
@@ -1606,7 +1610,7 @@ void UI::HandleKeyDown(StringHash eventType, VariantMap& eventData)
     int key = eventData[P_KEY].GetInt();
 
     // Cancel UI dragging
-    if (key == KEY_ESC && dragElementsCount_ > 0)
+    if (key == KEY_ESCAPE && dragElementsCount_ > 0)
     {
         ProcessDragCancel();
 
@@ -1614,7 +1618,7 @@ void UI::HandleKeyDown(StringHash eventType, VariantMap& eventData)
     }
 
     // Dismiss modal element if any when ESC key is pressed
-    if (key == KEY_ESC && HasModalElement())
+    if (key == KEY_ESCAPE && HasModalElement())
     {
         UIElement* element = rootModalElement_->GetChild(rootModalElement_->GetNumChildren() - 1);
         if (element->GetVars().Contains(VAR_ORIGIN))
@@ -1664,7 +1668,7 @@ void UI::HandleKeyDown(StringHash eventType, VariantMap& eventData)
             }
         }
         // Defocus the element
-        else if (key == KEY_ESC && element->GetFocusMode() == FM_FOCUSABLE_DEFOCUSABLE)
+        else if (key == KEY_ESCAPE && element->GetFocusMode() == FM_FOCUSABLE_DEFOCUSABLE)
             element->SetFocus(false);
         // If none of the special keys, pass the key to the focused element
         else
