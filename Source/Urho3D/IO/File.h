@@ -27,14 +27,14 @@
 #include "../IO/Deserializer.h"
 #include "../IO/Serializer.h"
 
-#ifdef ANDROID
-#include <SDL/SDL_rwops.h>
+#ifdef __ANDROID__
+struct SDL_RWops;
 #endif
 
 namespace Urho3D
 {
 
-#ifdef ANDROID
+#ifdef __ANDROID__
 extern const char* APK;
 
 // Macro for checking if a given pathname is inside APK's assets directory
@@ -109,13 +109,20 @@ public:
     bool IsPackaged() const { return offset_ != 0; }
 
 private:
+    /// Open file internally using either C standard IO functions or SDL RWops for Android asset files. Return true if successful.
+    bool OpenInternal(const String& fileName, FileMode mode, bool fromPackage = false);
+    /// Perform the file read internally using either C standard IO functions or SDL RWops for Android asset files. Return true if successful. This does not handle compressed package file reading.
+    bool ReadInternal(void* dest, unsigned size);
+    /// Seek in file internally using either C standard IO functions or SDL RWops for Android asset files.
+    void SeekInternal(unsigned newPosition);
+
     /// File name.
     String fileName_;
     /// Open mode.
     FileMode mode_;
     /// File handle.
     void* handle_;
-#ifdef ANDROID
+#ifdef __ANDROID__
     /// SDL RWops context for Android asset loading.
     SDL_RWops* assetHandle_;
 #endif
