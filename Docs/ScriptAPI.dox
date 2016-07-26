@@ -9259,6 +9259,7 @@ Methods:
 - void AddColorTime(Color&, float)
 - void AddTextureFrame(TextureFrame@)
 - void AddTextureTime(Rect&, float)
+- ParticleEffect@ Clone(const String& = String ( )) const
 - ColorFrame@ GetColorFrame(uint) const
 - TextureFrame@ GetTextureFrame(uint) const
 - bool HasSubscribedToEvent(Object@, const String&)
@@ -9327,6 +9328,7 @@ Properties:
 
 Methods:
 
+- ParticleEffect2D@ Clone(const String& = String ( )) const
 - bool HasSubscribedToEvent(Object@, const String&)
 - bool HasSubscribedToEvent(const String&)
 - bool Load(File@)
@@ -12800,7 +12802,7 @@ Properties:
 - bool focus
 - FocusMode focusMode
 - Font@ font // readonly
-- int fontSize // readonly
+- int fontSize
 - int height
 - HorizontalAlignment horizontalAlignment
 - Color hoverColor
@@ -12928,7 +12930,7 @@ Properties:
 - FaceCameraMode faceCameraMode
 - bool fixedScreenSize
 - Font@ font // readonly
-- int fontSize // readonly
+- int fontSize
 - HorizontalAlignment horizontalAlignment
 - uint id // readonly
 - bool inView // readonly
