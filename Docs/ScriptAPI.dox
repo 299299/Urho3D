@@ -8884,6 +8884,7 @@ Methods:
 - void RemoveInstanceDefault()
 - void RemoveObjectAnimation()
 - bool RemoveTag(const String&)
+- void ReorderComponent(Component@, uint)
 - void ResetDeepEnabled()
 - void ResetToDefault()
 - void Roll(float, TransformSpace = TS_LOCAL)
@@ -8946,7 +8947,7 @@ Properties:
 - Vector3 direction
 - bool enabled
 - bool enabledSelf // readonly
-- uint id // readonly
+- uint id
 - String name
 - uint numAllChildren // readonly
 - uint numAttributes // readonly
@@ -10534,6 +10535,7 @@ Methods:
 - void RemoveInstanceDefault()
 - void RemoveObjectAnimation()
 - bool RemoveTag(const String&)
+- void ReorderComponent(Component@, uint)
 - void ResetToDefault()
 - void Roll(float, TransformSpace = TS_LOCAL)
 - void Rotate(const Quaternion&, TransformSpace = TS_LOCAL)
@@ -10604,7 +10606,7 @@ Properties:
 - Vector3 direction
 - float elapsedTime
 - String fileName // readonly
-- uint id // readonly
+- uint id
 - String name
 - uint numAllChildren // readonly
 - uint numAttributes // readonly
