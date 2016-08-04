@@ -80,6 +80,7 @@ elseif (XCODE)
 endif ()
 
 # Define all supported build options
+include (CheckHost)
 include (CheckCompilerToolchain)
 include (CMakeDependentOption)
 option (URHO3D_C++11 "Enable C++11 standard")
@@ -97,28 +98,6 @@ endif ()
 if (IOS OR (RPI AND "${RPI_ABI}" MATCHES NEON) OR (ARM AND (URHO3D_64BIT OR "${ARM_ABI_FLAGS}" MATCHES neon)))    # Stringify in case RPI_ABI/ARM_ABI_FLAGS is not set explicitly
     # The 'NEON' CMake variable is already set by android.toolchain.cmake when the chosen ANDROID_ABI uses NEON
     set (NEON TRUE)
-endif ()
-if (CMAKE_HOST_WIN32)
-    if (NOT DEFINED URHO3D_MKLINK)
-        # Test whether the host system is capable of setting up symbolic link
-        execute_process (COMMAND cmd /C mklink test-link CMakeCache.txt RESULT_VARIABLE MKLINK_EXIT_CODE OUTPUT_QUIET ERROR_QUIET)
-        if (MKLINK_EXIT_CODE EQUAL 0)
-            set (URHO3D_MKLINK TRUE)
-            file (REMOVE ${CMAKE_BINARY_DIR}/test-link)
-        else ()
-            set (URHO3D_MKLINK FALSE)
-            message (WARNING "Could not use MKLINK to setup symbolic links as this Windows user account does not have the privilege to do so. "
-                "When MKLINK is not available then the build system will fallback to use file/directory copy of the library headers from source tree to build tree. "
-                "In order to prevent stale headers being used in the build, this file/directory copy will be redone also as a post-build step for each library targets. "
-                "This may slow down the build unnecessarily or even cause other unforseen issues due to incomplete or stale headers in the build tree. "
-                "Request your Windows Administrator to grant your user account to have privilege to create symlink via MKLINK command. "
-                "You are NOT advised to use the Administrator account directly to generate build tree in all cases.")
-        endif ()
-        set (URHO3D_MKLINK ${URHO3D_MKLINK} CACHE INTERNAL "MKLINK capability on the Windows host system")
-    endif ()
-    set (NULL_DEVICE nul)
-else ()
-    set (NULL_DEVICE /dev/null)
 endif ()
 # For Raspbery Pi, find Broadcom VideoCore IV firmware
 if (RPI)
@@ -733,10 +712,13 @@ else ()
         set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG -D_DEBUG")
     endif ()
     if (CMAKE_CXX_COMPILER_ID STREQUAL Clang)
+        # Clang-specific
+        set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Qunused-arguments")
+        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Qunused-arguments")
         if (NINJA OR "$ENV{USE_CCACHE}")    # Stringify to guard against undefined environment variable
             # When ccache support is on, these flags keep the color diagnostics pipe through ccache output and suppress Clang warning due ccache internal preprocessing step
-            set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fcolor-diagnostics -Qunused-arguments")
-            set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcolor-diagnostics -Qunused-arguments")
+            set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fcolor-diagnostics")
+            set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcolor-diagnostics")
         endif ()
         # Temporary workaround for Travis CI VM as Ubuntu 12.04 LTS still uses old glibc header files that do not have the necessary patch for Clang to work correctly
         # TODO: Remove this workaround when Travis CI VM has been migrated to Ubuntu 14.04 LTS
@@ -823,7 +805,7 @@ macro (create_symlink SOURCE DESTINATION)
         else ()
             unset (SLASH_D)
         endif ()
-        if (URHO3D_MKLINK)
+        if (HAS_MKLINK)
             if (NOT EXISTS ${ABS_DESTINATION})
                 # Have to use string-REPLACE as file-TO_NATIVE_PATH does not work as expected with MinGW on "backward slash" host system
                 string (REPLACE / \\ BACKWARD_ABS_DESTINATION ${ABS_DESTINATION})
@@ -1744,6 +1726,9 @@ macro (install_header_files)
                 # Source is a directory
                 if (ARG_USE_FILE_SYMLINK OR ARG_ACCUMULATE)
                     # Use file symlink for each individual files in the source directory
+                    if (IS_SYMLINK ${ARG_DESTINATION} AND NOT CMAKE_HOST_WIN32)
+                        execute_process (COMMAND ${CMAKE_COMMAND} -E remove ${ARG_DESTINATION})
+                    endif ()
                     set (GLOBBING_EXPRESSION RELATIVE ${INSTALL_SOURCE})
                     if (ARG_FILES_MATCHING)
                         foreach (PATTERN ${ARG_PATTERN})
@@ -1766,6 +1751,9 @@ macro (install_header_files)
                     endforeach ()
                 else ()
                     # Use a single symlink pointing to the source directory
+                    if (NOT IS_SYMLINK ${ARG_DESTINATION} AND NOT CMAKE_HOST_WIN32)
+                        execute_process (COMMAND ${CMAKE_COMMAND} -E remove_directory ${ARG_DESTINATION})
+                    endif ()
                     create_symlink (${INSTALL_SOURCE} ${ARG_DESTINATION} FALLBACK_TO_COPY)
                 endif ()
             else ()
