@@ -599,8 +599,15 @@ bool Graphics::TakeScreenShot(Image& destImage)
 
     ResetRenderTargets();
 
+#ifndef GL_ES_VERSION_2_0
     destImage.SetSize(width_, height_, 3);
     glReadPixels(0, 0, width_, height_, GL_RGB, GL_UNSIGNED_BYTE, destImage.GetData());
+#else
+    // Use RGBA format on OpenGL ES, as otherwise (at least on Android) the produced image is all black
+    destImage.SetSize(width_, height_, 4);
+    glReadPixels(0, 0, width_, height_, GL_RGBA, GL_UNSIGNED_BYTE, destImage.GetData());
+#endif
+
     // On OpenGL we need to flip the image vertically after reading
     destImage.FlipVertical();
 
@@ -1700,9 +1707,8 @@ void Graphics::SetDepthBias(float constantBias, float slopeScaledBias)
         if (slopeScaledBias != 0.0f)
         {
             // OpenGL constant bias is unreliable and dependant on depth buffer bitdepth, apply in the projection matrix instead
-            float adjustedSlopeScaledBias = slopeScaledBias + 1.0f;
             glEnable(GL_POLYGON_OFFSET_FILL);
-            glPolygonOffset(adjustedSlopeScaledBias, 0.0f);
+            glPolygonOffset(slopeScaledBias, 0.0f);
         }
         else
             glDisable(GL_POLYGON_OFFSET_FILL);
