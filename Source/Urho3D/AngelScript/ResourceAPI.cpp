@@ -340,7 +340,7 @@ static void RegisterJSONValue(asIScriptEngine* engine)
     engine->RegisterObjectMethod("JSONValue", "void Insert(uint, const JSONValue&in)", asMETHODPR(JSONValue, Insert, (unsigned, const JSONValue&), void), asCALL_THISCALL);
     engine->RegisterObjectMethod("JSONValue", "void Erase(uint, uint length = 1)", asMETHODPR(JSONValue, Erase, (unsigned, unsigned), void), asCALL_THISCALL);
     engine->RegisterObjectMethod("JSONValue", "void Resize(uint)", asMETHOD(JSONValue, Resize), asCALL_THISCALL);
-    engine->RegisterObjectMethod("JSONValue", "uint get_size()", asMETHOD(JSONValue, Size), asCALL_THISCALL);
+    engine->RegisterObjectMethod("JSONValue", "uint get_size() const", asMETHOD(JSONValue, Size), asCALL_THISCALL);
 
     engine->RegisterObjectMethod("JSONValue", "JSONValue& opIndex(const String&in)", asFUNCTION(JSONValueAtKey), asCALL_CDECL_OBJLAST);
     engine->RegisterObjectMethod("JSONValue", "const JSONValue& opIndex(const String&in) const", asFUNCTION(JSONValueAtKey), asCALL_CDECL_OBJLAST);
@@ -360,6 +360,7 @@ static bool JSONFileSave(File* file, const String& indendation, JSONFile* ptr)
 static void RegisterJSONFile(asIScriptEngine* engine)
 {
     RegisterResource<JSONFile>(engine, "JSONFile");
+    engine->RegisterObjectMethod("JSONFile", "bool FromString(const String&in)", asMETHOD(JSONFile, FromString), asCALL_THISCALL);
     engine->RegisterObjectMethod("JSONFile", "JSONValue& GetRoot()", asMETHODPR(JSONFile, GetRoot, () const, const JSONValue&), asCALL_THISCALL);
     engine->RegisterObjectMethod("JSONFile", "bool Save(File@+, const String&in) const", asFUNCTION(JSONFileSave), asCALL_CDECL_OBJLAST);
     engine->RegisterObjectMethod("JSONFile", "JSONValue& get_root()", asMETHODPR(JSONFile, GetRoot, () const, const JSONValue&), asCALL_THISCALL);

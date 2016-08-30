@@ -78,7 +78,7 @@ static const char* textureUnitNames[] =
 #endif
 };
 
-static const char* cullModeNames[] =
+const char* cullModeNames[] =
 {
     "none",
     "ccw",
@@ -962,8 +962,6 @@ void Material::SetUVTransform(const Vector2& offset, float rotation, const Vecto
     Matrix3x4 transform(Matrix3x4::IDENTITY);
     transform.m00_ = repeat.x_;
     transform.m11_ = repeat.y_;
-    transform.m03_ = -0.5f * transform.m00_ + 0.5f;
-    transform.m13_ = -0.5f * transform.m11_ + 0.5f;
 
     Matrix3x4 rotationMatrix(Matrix3x4::IDENTITY);
     rotationMatrix.m00_ = Cos(rotation);
@@ -973,7 +971,7 @@ void Material::SetUVTransform(const Vector2& offset, float rotation, const Vecto
     rotationMatrix.m03_ = 0.5f - 0.5f * (rotationMatrix.m00_ + rotationMatrix.m01_);
     rotationMatrix.m13_ = 0.5f - 0.5f * (rotationMatrix.m10_ + rotationMatrix.m11_);
 
-    transform = rotationMatrix * transform;
+    transform = transform * rotationMatrix;
 
     Matrix3x4 offsetMatrix = Matrix3x4::IDENTITY;
     offsetMatrix.m03_ = offset.x_;
@@ -1179,8 +1177,8 @@ void Material::ResetToDefaults()
     SetShaderParameter("MatEmissiveColor", Vector3::ZERO);
     SetShaderParameter("MatEnvMapColor", Vector3::ONE);
     SetShaderParameter("MatSpecColor", Vector4(0.0f, 0.0f, 0.0f, 1.0f));
-    SetShaderParameter("RoughnessPS", 0.5f);
-    SetShaderParameter("MetallicPS", 0.0f);
+    SetShaderParameter("Roughness", 0.5f);
+    SetShaderParameter("Metallic", 0.0f);
     batchedParameterUpdate_ = false;
 
     cullMode_ = CULL_CCW;

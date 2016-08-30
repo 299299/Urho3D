@@ -1,4 +1,3 @@
-
 //
 // Copyright (c) 2008-2016 the Urho3D project.
 //
@@ -28,6 +27,7 @@
 #include "../IO/Log.h"
 
 #include "../DebugNew.h"
+
 
 namespace Urho3D
 {
@@ -308,7 +308,7 @@ void Object::SendEvent(StringHash eventType, VariantMap& eventData)
     Context* context = context_;
     HashSet<Object*> processed;
 
-    context->BeginSendEvent(this);
+    context->BeginSendEvent(this, eventType);
 
     // Check first the specific event receivers
     const HashSet<Object*>* group = context->GetEventReceivers(this, eventType);
@@ -410,9 +410,9 @@ const Variant& Object::GetGlobalVar(StringHash key) const
     return context_->GetGlobalVar(key);
 }
 
-const VariantMap& Object::GetGlobalVars() const 
-{ 
-    return context_->GetGlobalVars(); 
+const VariantMap& Object::GetGlobalVars() const
+{
+    return context_->GetGlobalVars();
 }
 
 void Object::SetGlobalVar(StringHash key, const Variant& value)
@@ -533,6 +533,26 @@ void Object::RemoveEventSender(Object* sender)
             handler = eventHandlers_.Next(handler);
         }
     }
+}
+
+
+Urho3D::StringHash EventNameRegistrar::RegisterEventName(const char* eventName)
+{
+    StringHash id(eventName);
+    GetEventNameMap()[id] = eventName;
+    return id;
+}
+
+const String& EventNameRegistrar::GetEventName(StringHash eventID)
+{
+    HashMap<StringHash, String>::ConstIterator it = GetEventNameMap().Find(eventID);
+    return  it != GetEventNameMap().End() ? it->second_ : String::EMPTY ;
+}
+
+HashMap<StringHash, String>& EventNameRegistrar::GetEventNameMap()
+{
+    static HashMap<StringHash, String> eventNames_;
+    return eventNames_;
 }
 
 }

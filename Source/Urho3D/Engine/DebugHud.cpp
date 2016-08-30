@@ -24,6 +24,8 @@
 
 #include "../Core/CoreEvents.h"
 #include "../Core/Profiler.h"
+#include "../Core/EventProfiler.h"
+#include "../Core/Context.h"
 #include "../Engine/DebugHud.h"
 #include "../Engine/Engine.h"
 #include "../Graphics/Graphics.h"
@@ -85,10 +87,16 @@ DebugHud::DebugHud(Context* context) :
     uiRoot->AddChild(profilerText_);
 
     memoryText_ = new Text(context_);
-    memoryText_->SetAlignment(HA_RIGHT, VA_TOP);
+    memoryText_->SetAlignment(HA_LEFT, VA_BOTTOM);
     memoryText_->SetPriority(100);
     memoryText_->SetVisible(false);
     uiRoot->AddChild(memoryText_);
+
+    eventProfilerText_ = new Text(context_);
+    eventProfilerText_->SetAlignment(HA_RIGHT, VA_TOP);
+    eventProfilerText_->SetPriority(100);
+    eventProfilerText_->SetVisible(false);
+    uiRoot->AddChild(eventProfilerText_);
 
     SubscribeToEvent(E_POSTUPDATE, URHO3D_HANDLER(DebugHud, HandlePostUpdate));
 }
@@ -99,6 +107,7 @@ DebugHud::~DebugHud()
     modeText_->Remove();
     profilerText_->Remove();
     memoryText_->Remove();
+    eventProfilerText_->Remove();
 }
 
 void DebugHud::Update()
@@ -169,6 +178,7 @@ void DebugHud::Update()
     }
 
     Profiler* profiler = GetSubsystem<Profiler>();
+    EventProfiler* eventProfiler = GetSubsystem<EventProfiler>();
     if (profiler)
     {
         if (profilerTimer_.GetMSec(false) >= profilerInterval_)
@@ -176,20 +186,22 @@ void DebugHud::Update()
             profilerTimer_.Reset();
 
             if (profilerText_->IsVisible())
-            {
-                String profilerOutput = profiler->PrintData(false, false, profilerMaxDepth_);
-                profilerText_->SetText(profilerOutput);
-            }
+                profilerText_->SetText(profiler->PrintData(false, false, profilerMaxDepth_));
 
             profiler->BeginInterval();
+
+            if (eventProfiler)
+            {
+                if (eventProfilerText_->IsVisible())
+                    eventProfilerText_->SetText(eventProfiler->PrintData(false, false, profilerMaxDepth_));
+
+                eventProfiler->BeginInterval();
+            }
         }
     }
 
     if (memoryText_->IsVisible())
-    {
-        ResourceCache* cache = GetSubsystem<ResourceCache>();
-        memoryText_->SetText(cache->PrintMemoryUsage());
-    }
+        memoryText_->SetText(GetSubsystem<ResourceCache>()->PrintMemoryUsage());
 }
 
 void DebugHud::SetDefaultStyle(XMLFile* style)
@@ -205,6 +217,8 @@ void DebugHud::SetDefaultStyle(XMLFile* style)
     profilerText_->SetStyle("DebugHudText");
     memoryText_->SetDefaultStyle(style);
     memoryText_->SetStyle("DebugHudText");
+    eventProfilerText_->SetDefaultStyle(style);
+    eventProfilerText_->SetStyle("DebugHudText");
 }
 
 void DebugHud::SetMode(unsigned mode)
@@ -213,6 +227,16 @@ void DebugHud::SetMode(unsigned mode)
     modeText_->SetVisible((mode & DEBUGHUD_SHOW_MODE) != 0);
     profilerText_->SetVisible((mode & DEBUGHUD_SHOW_PROFILER) != 0);
     memoryText_->SetVisible((mode & DEBUGHUD_SHOW_MEMORY) != 0);
+    eventProfilerText_->SetVisible((mode & DEBUGHUD_SHOW_EVENTPROFILER) != 0);
+
+    memoryText_->SetPosition(0, modeText_->IsVisible() ? modeText_->GetHeight() * -2 : 0);
+
+#ifdef URHO3D_PROFILING
+    // Event profiler is created on engine initialization if "EventProfiler" parameter is set
+    EventProfiler* eventProfiler = GetSubsystem<EventProfiler>();
+    if (eventProfiler)
+        EventProfiler::SetActive((mode & DEBUGHUD_SHOW_EVENTPROFILER) != 0);
+#endif
 
     mode_ = mode;
 }

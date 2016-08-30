@@ -69,13 +69,14 @@ void CreateScene()
     ui.root.GetChild("animatingText").SetAttributeAnimation("Text", textAnimation);
     
     // Create UI element animation
-    // (note: a spritesheet should be used in real use cases for better performance)
+    // (note: a spritesheet and "Image Rect" attribute should be used in real use cases for better performance)
     ValueAnimation@ spriteAnimation = ValueAnimation();
     spriteAnimation.SetKeyFrame(0.0f, Variant(ResourceRef("Texture2D", "Urho2D/GoldIcon/1.png")));
     spriteAnimation.SetKeyFrame(0.1f, Variant(ResourceRef("Texture2D", "Urho2D/GoldIcon/2.png")));
-    spriteAnimation.SetKeyFrame(0.2f, Variant(ResourceRef("Texture2D", "Urho2D/GoldIcon/4.png")));
-    spriteAnimation.SetKeyFrame(0.3f, Variant(ResourceRef("Texture2D", "Urho2D/GoldIcon/5.png")));
-    spriteAnimation.SetKeyFrame(0.4f, Variant(ResourceRef("Texture2D", "Urho2D/GoldIcon/1.png")));
+    spriteAnimation.SetKeyFrame(0.2f, Variant(ResourceRef("Texture2D", "Urho2D/GoldIcon/3.png")));
+    spriteAnimation.SetKeyFrame(0.3f, Variant(ResourceRef("Texture2D", "Urho2D/GoldIcon/4.png")));
+    spriteAnimation.SetKeyFrame(0.4f, Variant(ResourceRef("Texture2D", "Urho2D/GoldIcon/5.png")));
+    spriteAnimation.SetKeyFrame(0.5f, Variant(ResourceRef("Texture2D", "Urho2D/GoldIcon/1.png")));
     ui.root.GetChild("animatingSprite").SetAttributeAnimation("Texture", spriteAnimation);
 
     // Create light position animation
@@ -137,7 +138,7 @@ void CreateInstructions()
     text.horizontalAlignment = HA_CENTER;
     text.verticalAlignment = VA_CENTER;
     text.SetPosition(0, ui.root.height / 4 + 20);
-    
+
     // Animating sprite in the top left corner
     Sprite@ sprite = ui.root.CreateChild("Sprite", "animatingSprite");
     sprite.SetPosition(8, 8);
@@ -175,13 +176,13 @@ void MoveCamera(float timeStep)
 
     // Read WASD keys and move the camera scene node to the corresponding direction if they are pressed
     // Use the Translate() function (default local space) to move relative to the node's orientation.
-    if (input.keyDown['W'])
+    if (input.keyDown[KEY_W])
         cameraNode.Translate(Vector3(0.0f, 0.0f, 1.0f) * MOVE_SPEED * timeStep);
-    if (input.keyDown['S'])
+    if (input.keyDown[KEY_S])
         cameraNode.Translate(Vector3(0.0f, 0.0f, -1.0f) * MOVE_SPEED * timeStep);
-    if (input.keyDown['A'])
+    if (input.keyDown[KEY_A])
         cameraNode.Translate(Vector3(-1.0f, 0.0f, 0.0f) * MOVE_SPEED * timeStep);
-    if (input.keyDown['D'])
+    if (input.keyDown[KEY_D])
         cameraNode.Translate(Vector3(1.0f, 0.0f, 0.0f) * MOVE_SPEED * timeStep);
 }
 

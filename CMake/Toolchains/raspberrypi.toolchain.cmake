@@ -20,7 +20,9 @@
 # THE SOFTWARE.
 #
 
-cmake_minimum_required (VERSION 2.6.3)
+if (DEFINED CMAKE_CROSSCOMPILING)
+    return ()
+endif ()
 
 if (CMAKE_TOOLCHAIN_FILE)
     # Reference toolchain variable to suppress "unused variable" warning

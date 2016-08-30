@@ -25,16 +25,16 @@
 #include "../Audio/Audio.h"
 #include "../Core/Context.h"
 #include "../Core/CoreEvents.h"
+#include "../Core/EventProfiler.h"
 #include "../Core/ProcessUtils.h"
-#include "../Core/Profiler.h"
 #include "../Core/WorkQueue.h"
 #include "../Engine/Console.h"
 #include "../Engine/DebugHud.h"
 #include "../Engine/Engine.h"
 #include "../Graphics/Graphics.h"
 #include "../Graphics/Renderer.h"
-#include "../IO/FileSystem.h"
 #include "../Input/Input.h"
+#include "../IO/FileSystem.h"
 #include "../IO/Log.h"
 #include "../IO/PackageFile.h"
 #ifdef URHO3D_NAVIGATION
@@ -64,6 +64,7 @@
 
 #include "../DebugNew.h"
 
+
 #if defined(_MSC_VER) && defined(_DEBUG)
 // From dbgint.h
 #define nNoMansLandSize 4
@@ -91,7 +92,7 @@ Engine::Engine(Context* context) :
     timeStep_(0.0f),
     timeStepSmoothing_(2),
     minFps_(10),
-#if defined(ANDROID) || defined(IOS) || defined(RPI)
+#if defined(IOS) || defined(__ANDROID__) || defined(__arm__) || defined(__aarch64__)
     maxFps_(60),
     maxInactiveFps_(10),
     pauseMinimized_(true),
@@ -413,16 +414,13 @@ bool Engine::Initialize(const VariantMap& parameters)
         timeOut_ = GetParameter(parameters, "TimeOut", 0).GetInt() * 1000000LL;
 #endif
 
-    // In debug mode, check now that all factory created objects can be created without crashing
-#ifdef _DEBUG
-    if (!resourcePaths.Empty())
+#ifdef URHO3D_PROFILING
+    if (GetParameter(parameters, "EventProfiler", true).GetBool())
     {
-        const HashMap<StringHash, SharedPtr<ObjectFactory> >& factories = context_->GetObjectFactories();
-        for (HashMap<StringHash, SharedPtr<ObjectFactory> >::ConstIterator i = factories.Begin(); i != factories.End(); ++i)
-            SharedPtr<Object> object = i->second_->CreateObject();
+        context_->RegisterSubsystem(new EventProfiler(context_));
+        EventProfiler::SetActive(true);
     }
 #endif
-
     frameTimer_.Reset();
 
     URHO3D_LOGINFO("Initialized engine");
@@ -446,6 +444,15 @@ void Engine::RunFrame()
     Time* time = GetSubsystem<Time>();
     Input* input = GetSubsystem<Input>();
     Audio* audio = GetSubsystem<Audio>();
+
+#ifdef URHO3D_PROFILING
+    if (EventProfiler::IsActive())
+    {
+        EventProfiler* eventProfiler = GetSubsystem<EventProfiler>();
+        if (eventProfiler)
+            eventProfiler->BeginFrame();
+    }
+#endif
 
     time->BeginFrame(timeStep_);
 
@@ -536,7 +543,7 @@ void Engine::SetPauseMinimized(bool enable)
 void Engine::SetAutoExit(bool enable)
 {
     // On mobile platforms exit is mandatory if requested by the platform itself and should not be attempted to be disabled
-#if defined(ANDROID) || defined(IOS)
+#if defined(__ANDROID__) || defined(IOS)
     enable = true;
 #endif
     autoExit_ = enable;
@@ -558,35 +565,39 @@ void Engine::Exit()
 
 void Engine::DumpProfiler()
 {
+#ifdef URHO3D_LOGGING
+    if (!Thread::IsMainThread())
+        return;
+
     Profiler* profiler = GetSubsystem<Profiler>();
     if (profiler)
         URHO3D_LOGRAW(profiler->PrintData(true, true) + "\n");
+#endif
 }
 
 void Engine::DumpResources(bool dumpFileName)
 {
 #ifdef URHO3D_LOGGING
+    if (!Thread::IsMainThread())
+        return;
+
     ResourceCache* cache = GetSubsystem<ResourceCache>();
     const HashMap<StringHash, ResourceGroup>& resourceGroups = cache->GetAllResources();
-    URHO3D_LOGRAW("\n");
-
     if (dumpFileName)
     {
         URHO3D_LOGRAW("Used resources:\n");
-        for (HashMap<StringHash, ResourceGroup>::ConstIterator i = resourceGroups.Begin();
-            i != resourceGroups.End(); ++i)
+        for (HashMap<StringHash, ResourceGroup>::ConstIterator i = resourceGroups.Begin(); i != resourceGroups.End(); ++i)
         {
             const HashMap<StringHash, SharedPtr<Resource> >& resources = i->second_.resources_;
             if (dumpFileName)
             {
-                for (HashMap<StringHash, SharedPtr<Resource> >::ConstIterator j = resources.Begin();
-                    j != resources.End(); ++j)
+                for (HashMap<StringHash, SharedPtr<Resource> >::ConstIterator j = resources.Begin(); j != resources.End(); ++j)
                     URHO3D_LOGRAW(j->second_->GetName() + "\n");
             }
         }
     }
     else
-        URHO3D_LOGRAW(cache->PrintMemoryUsage());
+        URHO3D_LOGRAW(cache->PrintMemoryUsage() + "\n");
 #endif
 }
 
@@ -682,7 +693,13 @@ void Engine::ApplyFrameLimit()
 
 #ifndef __EMSCRIPTEN__
     // Perform waiting loop if maximum FPS set
+#ifndef IOS
     if (maxFps)
+#else
+    // If on iOS and target framerate is 60 or above, just let the animation callback handle frame timing
+    // instead of waiting ourselves
+    if (maxFps < 60)
+#endif
     {
         URHO3D_PROFILE(ApplyFrameLimit);
 

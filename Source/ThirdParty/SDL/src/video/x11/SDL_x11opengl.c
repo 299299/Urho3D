@@ -18,6 +18,9 @@
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 */
+
+// Modified by Yao Wei Tjong for Urho3D
+
 #include "../../SDL_internal.h"
 
 #if SDL_VIDEO_DRIVER_X11
@@ -223,11 +226,11 @@ X11_GL_LoadLibrary(_THIS, const char *path)
 
     /* Initialize extensions */
     X11_GL_InitExtensions(_this);
-    
-    /* If we need a GL ES context and there's no  
-     * GLX_EXT_create_context_es2_profile extension, switch over to X11_GLES functions  
+
+    /* If we need a GL ES context and there's no
+     * GLX_EXT_create_context_es2_profile extension, switch over to X11_GLES functions
      */
-    if (_this->gl_config.profile_mask == SDL_GL_CONTEXT_PROFILE_ES && 
+    if (_this->gl_config.profile_mask == SDL_GL_CONTEXT_PROFILE_ES &&
         ! _this->gl_data->HAS_GLX_EXT_create_context_es2_profile ) {
 #if SDL_VIDEO_OPENGL_EGL
         X11_GL_UnloadLibrary(_this);
@@ -377,7 +380,7 @@ X11_GL_InitExtensions(_THIS)
     if (HasExtension("GLX_EXT_visual_info", extensions)) {
         _this->gl_data->HAS_GLX_EXT_visual_info = SDL_TRUE;
     }
-    
+
     /* Check for GLX_EXT_create_context_es2_profile */
     if (HasExtension("GLX_EXT_create_context_es2_profile", extensions)) {
         _this->gl_data->HAS_GLX_EXT_create_context_es2_profile = SDL_TRUE;
@@ -618,9 +621,9 @@ X11_GL_CreateContext(_THIS, SDL_Window * window)
             /* only set if glx extension is available */
             if( _this->gl_data->HAS_GLX_ARB_context_flush_control ) {
                 attribs[iattr++] = GLX_CONTEXT_RELEASE_BEHAVIOR_ARB;
-                attribs[iattr++] = 
-                    _this->gl_config.release_behavior ? 
-                    GLX_CONTEXT_RELEASE_BEHAVIOR_FLUSH_ARB : 
+                attribs[iattr++] =
+                    _this->gl_config.release_behavior ?
+                    GLX_CONTEXT_RELEASE_BEHAVIOR_FLUSH_ARB :
                     GLX_CONTEXT_RELEASE_BEHAVIOR_NONE_ARB;
             }
 
@@ -649,6 +652,8 @@ X11_GL_CreateContext(_THIS, SDL_Window * window)
                                                     framebuffer_config[0],
                                                     share_context, True, attribs);
                 }
+                // Urho3D - fix memory leak detected by Valgrind
+                X11_XFree(framebuffer_config);
             }
         }
         X11_XFree(vinfo);

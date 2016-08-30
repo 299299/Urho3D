@@ -50,11 +50,15 @@ if (NOT IOS AND NOT WEB)
     # Define dependency libs
     if (NOT WIN32)
         set (LIBS dl)
-    endif ()
-    if (READLINE_FOUND)
-        add_definitions (-DHAVE_READLINE)
-        list (APPEND INCLUDE_DIRS ${READLINE_INCLUDE_DIR})
-        list (APPEND LIBS ${READLINE_LIBRARIES})
+        if (READLINE_FOUND)
+            add_definitions (-DHAVE_READLINE)
+            # FIXME: temporary quick fix
+            if (RPI AND CMAKE_CROSSCOMPILING)
+                set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --sysroot=\"${SYSROOT}\"")
+            endif ()
+            list (APPEND INCLUDE_DIRS ${READLINE_INCLUDE_DIRS})
+            list (APPEND LIBS ${READLINE_LIBRARIES})
+        endif ()
     endif ()
 
     # Setup target
