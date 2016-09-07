@@ -1454,6 +1454,7 @@ namespace Urho3D
 - %Depth %Slope %Bias : float
 - %Normal %Offset : float
 - %Near/Farclip %Ratio : float
+- %Max %Extrusion : float
 - %View %Mask : int
 - %Light %Mask : int
 
@@ -7547,6 +7548,7 @@ Properties:
 - FocusParameters shadowFocus
 - float shadowIntensity
 - uint shadowMask
+- float shadowMaxExtrusion
 - float shadowNearFarRatio
 - float shadowResolution
 - Texture@ shapeTexture
@@ -8056,7 +8058,8 @@ Properties:
 - uint memoryUse // readonly
 - String name
 - uint numTechniques
-- bool occlusion // readonly
+- bool occlusion
+- String pixelShaderDefines
 - int refs // readonly
 - uint8 renderOrder
 - Scene@ scene
@@ -8069,6 +8072,7 @@ Properties:
 - StringHash type // readonly
 - String typeName // readonly
 - uint useTimer // readonly
+- String vertexShaderDefines
 - int weakRefs // readonly
 
 <a name="Class_Matrix2"></a>
@@ -9577,7 +9581,6 @@ Properties:
 
 Properties:
 
-- bool alphaMask
 - BlendMode blendMode
 - CullMode cullMode
 - CompareMode depthTestMode

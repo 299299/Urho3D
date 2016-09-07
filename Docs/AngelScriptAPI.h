@@ -5688,6 +5688,7 @@ float shadowFadeDistance;
 FocusParameters shadowFocus;
 float shadowIntensity;
 uint shadowMask;
+float shadowMaxExtrusion;
 float shadowNearFarRatio;
 float shadowResolution;
 Texture shapeTexture;
@@ -6271,8 +6272,8 @@ FillMode fillMode;
 uint memoryUse;
 String name;
 uint numTechniques;
-/* readonly */
 bool occlusion;
+String pixelShaderDefines;
 /* readonly */
 int refs;
 uint8 renderOrder;
@@ -6292,6 +6293,7 @@ StringHash type;
 String typeName;
 /* readonly */
 uint useTimer;
+String vertexShaderDefines;
 /* readonly */
 int weakRefs;
 };
@@ -7973,7 +7975,6 @@ class Pass
 {
 
 // Properties:
-bool alphaMask;
 BlendMode blendMode;
 CullMode cullMode;
 CompareMode depthTestMode;
