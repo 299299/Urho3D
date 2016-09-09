@@ -906,6 +906,10 @@ static void RegisterMaterial(asIScriptEngine* engine)
     engine->RegisterObjectMethod("Pass", "const String& get_vertexShaderDefines() const", asMETHOD(Pass, GetVertexShaderDefines), asCALL_THISCALL);
     engine->RegisterObjectMethod("Pass", "void set_pixelShaderDefines(const String&in)", asMETHOD(Pass, SetPixelShaderDefines), asCALL_THISCALL);
     engine->RegisterObjectMethod("Pass", "const String& get_pixelShaderDefines() const", asMETHOD(Pass, GetPixelShaderDefines), asCALL_THISCALL);
+    engine->RegisterObjectMethod("Pass", "void set_vertexShaderDefineExcludes(const String&in)", asMETHOD(Pass, SetVertexShaderDefineExcludes), asCALL_THISCALL);
+    engine->RegisterObjectMethod("Pass", "const String& get_vertexShaderDefineExcludes() const", asMETHOD(Pass, GetVertexShaderDefineExcludes), asCALL_THISCALL);
+    engine->RegisterObjectMethod("Pass", "void set_pixelShaderDefineExcludes(const String&in)", asMETHOD(Pass, SetPixelShaderDefineExcludes), asCALL_THISCALL);
+    engine->RegisterObjectMethod("Pass", "const String& get_pixelShaderDefineExcludes() const", asMETHOD(Pass, GetPixelShaderDefineExcludes), asCALL_THISCALL);
 
     RegisterResource<Technique>(engine, "Technique");
     engine->RegisterObjectMethod("Technique", "Pass@+ CreatePass(const String&in)", asMETHOD(Technique, CreatePass), asCALL_THISCALL);
@@ -1448,6 +1452,7 @@ static void RegisterBillboardSet(asIScriptEngine* engine)
     engine->RegisterEnumValue("FaceCameraMode", "FC_ROTATE_Y", FC_ROTATE_Y);
     engine->RegisterEnumValue("FaceCameraMode", "FC_LOOKAT_XYZ", FC_LOOKAT_XYZ);
     engine->RegisterEnumValue("FaceCameraMode", "FC_LOOKAT_Y", FC_LOOKAT_Y);
+    engine->RegisterEnumValue("FaceCameraMode", "FC_LOOKAT_MIXED", FC_LOOKAT_MIXED);
     engine->RegisterEnumValue("FaceCameraMode", "FC_DIRECTION", FC_DIRECTION);
 
     engine->RegisterObjectType("Billboard", 0, asOBJ_REF);
@@ -1477,6 +1482,8 @@ static void RegisterBillboardSet(asIScriptEngine* engine)
     engine->RegisterObjectMethod("BillboardSet", "bool get_fixedScreenSize() const", asMETHOD(BillboardSet, IsFixedScreenSize), asCALL_THISCALL);
     engine->RegisterObjectMethod("BillboardSet", "void set_faceCameraMode(FaceCameraMode)", asMETHOD(BillboardSet, SetFaceCameraMode), asCALL_THISCALL);
     engine->RegisterObjectMethod("BillboardSet", "FaceCameraMode get_faceCameraMode() const", asMETHOD(BillboardSet, GetFaceCameraMode), asCALL_THISCALL);
+    engine->RegisterObjectMethod("BillboardSet", "void set_minAngle(float)", asMETHOD(BillboardSet, SetMinAngle), asCALL_THISCALL);
+    engine->RegisterObjectMethod("BillboardSet", "float get_minAngle() const", asMETHOD(BillboardSet, GetMinAngle), asCALL_THISCALL);
     engine->RegisterObjectMethod("BillboardSet", "void set_animationLodBias(float)", asMETHOD(BillboardSet, SetAnimationLodBias), asCALL_THISCALL);
     engine->RegisterObjectMethod("BillboardSet", "float get_animationLodBias() const", asMETHOD(BillboardSet, GetAnimationLodBias), asCALL_THISCALL);
     engine->RegisterObjectMethod("BillboardSet", "Billboard@+ get_billboards(uint)", asMETHOD(BillboardSet, GetBillboard), asCALL_THISCALL);

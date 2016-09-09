@@ -711,6 +711,7 @@ uint lightMask;
 float lodBias;
 Material material;
 uint maxLights;
+float minAngle;
 /* readonly */
 Node node;
 /* readonly */
@@ -7982,10 +7983,12 @@ bool depthWrite;
 bool desktop;
 PassLightingMode lightingMode;
 String pixelShader;
+String pixelShaderDefineExcludes;
 String pixelShaderDefines;
 /* readonly */
 int refs;
 String vertexShader;
+String vertexShaderDefineExcludes;
 String vertexShaderDefines;
 /* readonly */
 int weakRefs;
@@ -14137,6 +14140,7 @@ FC_ROTATE_XYZ,
 FC_ROTATE_Y,
 FC_LOOKAT_XYZ,
 FC_LOOKAT_Y,
+FC_LOOKAT_MIXED,
 FC_DIRECTION,
 };
 

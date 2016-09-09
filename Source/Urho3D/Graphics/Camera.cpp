@@ -302,7 +302,7 @@ const Frustum& Camera::GetFrustum() const
             else
                 frustum_.DefineOrtho(orthoSize_, aspectRatio_, zoom_, GetNearClip(), GetFarClip(), GetEffectiveWorldTransform());
         }
-        
+
         frustumDirty_ = false;
     }
 
@@ -368,7 +368,7 @@ Frustum Camera::GetViewSpaceSplitFrustum(float nearClip, float farClip) const
     farClip = Min(farClip, projFarClip_);
     if (farClip < nearClip)
         farClip = nearClip;
-    
+
     Frustum ret;
 
     if (customProjection_)
@@ -380,7 +380,7 @@ Frustum Camera::GetViewSpaceSplitFrustum(float nearClip, float farClip) const
         else
             ret.DefineOrtho(orthoSize_, aspectRatio_, zoom_, nearClip, farClip);
     }
-    
+
     return ret;
 }
 
@@ -454,7 +454,7 @@ Matrix4 Camera::GetGPUProjection() const
 #else
     // See formulation for depth range conversion at http://www.ogre3d.org/forums/viewtopic.php?f=4&t=13357
     Matrix4 ret = GetProjection();
-    
+
     ret.m20_ = 2.0f * ret.m20_ - ret.m30_;
     ret.m21_ = 2.0f * ret.m21_ - ret.m31_;
     ret.m22_ = 2.0f * ret.m22_ - ret.m32_;
@@ -520,16 +520,13 @@ float Camera::GetLodDistance(float distance, float scale, float bias) const
         return orthoSize_ / d;
 }
 
-Quaternion Camera::GetFaceCameraRotation(const Vector3& position, const Quaternion& rotation, FaceCameraMode mode)
+Quaternion Camera::GetFaceCameraRotation(const Vector3& position, const Quaternion& rotation, FaceCameraMode mode, float minAngle)
 {
     if (!node_)
         return rotation;
 
     switch (mode)
     {
-    default:
-        return rotation;
-
     case FC_ROTATE_XYZ:
         return node_->GetWorldRotation();
 
@@ -548,9 +545,9 @@ Quaternion Camera::GetFaceCameraRotation(const Vector3& position, const Quaterni
         }
 
     case FC_LOOKAT_Y:
+    case FC_LOOKAT_MIXED:
         {
-            // Make the Y-only lookat happen on an XZ plane to make sure there are no unwanted transitions
-            // or singularities
+            // Make the Y-only lookat happen on an XZ plane to make sure there are no unwanted transitions or singularities
             Vector3 lookAtVec(position - node_->GetWorldPosition());
             lookAtVec.y_ = 0.0f;
 
@@ -558,9 +555,20 @@ Quaternion Camera::GetFaceCameraRotation(const Vector3& position, const Quaterni
             lookAt.FromLookRotation(lookAtVec);
 
             Vector3 euler = rotation.EulerAngles();
+            if (mode == FC_LOOKAT_MIXED)
+            {
+                const float angle = lookAtVec.Angle(rotation * Vector3::UP);
+                if (angle > 180 - minAngle)
+                    euler.x_ += minAngle - (180 - angle);
+                else if (angle < minAngle)
+                    euler.x_ -= minAngle - angle;
+            }
             euler.y_ = lookAt.EulerAngles().y_;
             return Quaternion(euler.x_, euler.y_, euler.z_);
         }
+
+    default:
+        return rotation;
     }
 }
 
