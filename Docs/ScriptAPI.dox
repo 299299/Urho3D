@@ -8054,6 +8054,7 @@ Methods:
 
 Properties:
 
+- bool alphaToCoverage
 - String category // readonly
 - CullMode cullMode
 - BiasParameters depthBias
@@ -9584,6 +9585,7 @@ Properties:
 
 Properties:
 
+- bool alphaToCoverage
 - BlendMode blendMode
 - CullMode cullMode
 - CompareMode depthTestMode
@@ -13053,6 +13055,7 @@ Methods:
 Properties:
 
 - TextureAddressMode[] addressMode
+- uint anisotropy
 - Texture@ backupTexture
 - Color borderColor
 - String category // readonly
@@ -13099,6 +13102,7 @@ Methods:
 Properties:
 
 - TextureAddressMode[] addressMode
+- uint anisotropy
 - Texture@ backupTexture
 - Color borderColor
 - String category // readonly
@@ -13145,6 +13149,7 @@ Methods:
 Properties:
 
 - TextureAddressMode[] addressMode
+- uint anisotropy
 - Texture@ backupTexture
 - Color borderColor
 - String category // readonly
@@ -13192,6 +13197,7 @@ Methods:
 Properties:
 
 - TextureAddressMode[] addressMode
+- uint anisotropy
 - Texture@ backupTexture
 - Color borderColor
 - String category // readonly
@@ -13238,6 +13244,7 @@ Methods:
 Properties:
 
 - TextureAddressMode[] addressMode
+- uint anisotropy
 - Texture@ backupTexture
 - Color borderColor
 - String category // readonly
@@ -15187,6 +15194,7 @@ Properties:
 - NAVIGATIONPUSHINESS_LOW
 - NAVIGATIONPUSHINESS_MEDIUM
 - NAVIGATIONPUSHINESS_HIGH
+- NAVIGATIONPUSHINESS_NONE
 
 
 ### NavigationQuality

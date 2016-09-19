@@ -6264,6 +6264,7 @@ void SetUVTransform(const Vector2&, float, float);
 void SortTechniques();
 
 // Properties:
+bool alphaToCoverage;
 /* readonly */
 String category;
 CullMode cullMode;
@@ -7976,6 +7977,7 @@ class Pass
 {
 
 // Properties:
+bool alphaToCoverage;
 BlendMode blendMode;
 CullMode cullMode;
 CompareMode depthTestMode;
@@ -11868,6 +11870,7 @@ void SetNumLevels(uint);
 
 // Properties:
 Array<TextureAddressMode> addressMode;
+uint anisotropy;
 Texture backupTexture;
 Color borderColor;
 /* readonly */
@@ -11928,6 +11931,7 @@ bool SetSize(int, int, uint, TextureUsage = TEXTURE_STATIC);
 
 // Properties:
 Array<TextureAddressMode> addressMode;
+uint anisotropy;
 Texture backupTexture;
 Color borderColor;
 /* readonly */
@@ -11989,6 +11993,7 @@ bool SetSize(uint, int, int, uint, TextureUsage = TEXTURE_STATIC);
 
 // Properties:
 Array<TextureAddressMode> addressMode;
+uint anisotropy;
 Texture backupTexture;
 Color borderColor;
 /* readonly */
@@ -12051,6 +12056,7 @@ bool SetSize(int, int, int, uint, TextureUsage = TEXTURE_STATIC);
 
 // Properties:
 Array<TextureAddressMode> addressMode;
+uint anisotropy;
 Texture backupTexture;
 Color borderColor;
 /* readonly */
@@ -12111,6 +12117,7 @@ bool SetSize(int, uint, TextureUsage = TEXTURE_STATIC);
 
 // Properties:
 Array<TextureAddressMode> addressMode;
+uint anisotropy;
 Texture backupTexture;
 Color borderColor;
 /* readonly */
@@ -14269,6 +14276,7 @@ enum NavigationPushiness
 NAVIGATIONPUSHINESS_LOW,
 NAVIGATIONPUSHINESS_MEDIUM,
 NAVIGATIONPUSHINESS_HIGH,
+NAVIGATIONPUSHINESS_NONE,
 };
 
 enum NavigationQuality

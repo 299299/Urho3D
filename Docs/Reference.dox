@@ -1086,6 +1086,8 @@ These differences need to be observed when using the low-level rendering functio
 
 - Direct3D11 is strict about vertex attributes referenced by shaders. A model will not render (input layout fails to create) if the shader for example asks for UV coordinates and the model does not have them. For this particular case, see the NOUV define in LitSolid shader, which is defined in the NoTexture family of techniques to prevent the attempted reading of UV coords.
 
+- Alpha-to-coverage is not supported on Direct3D9.
+
 OpenGL ES 2.0 has further limitations:
 
 - Of the DXT formats, only DXT1 compressed textures will be uploaded as compressed, and only if the EXT_texture_compression_dxt1 extension is present. Other DXT formats will be uploaded as uncompressed RGBA. ETC1 (Android) and PVRTC (iOS) compressed textures are supported through the .ktx and .pvr file formats.
@@ -1169,6 +1171,7 @@ A material definition looks like this:
     <shadowcull value="cw|ccw|none" />
     <fill value="solid|wireframe|point" />
     <depthbias constant="x" slopescaled="y" />
+    <alphatocoverage enable="true|false" />
     <renderorder value="x" />
     <occlusion enable="true|false" />
 </material>
@@ -1195,6 +1198,8 @@ Occlusion flag allows to disable software occlusion rendering per material, for 
 Materials can optionally set shader compilation defines (vsdefines & psdefines). In this case they will be added to the techniques' own compilation defines, and the techniques are cloned as necessary
 to ensure uniqueness.
 
+Enabling alpha-to-coverage on the material enables it on all passes. Alternatively it can be enabled per-pass in the technique for fine-grained control.
+
 \section Materials_Textures Material textures
 
 Diffuse maps specify the surface color in the RGB channels. Optionally they can use the alpha channel for blending and alpha testing. They should preferably be compressed to DXT1 (no alpha or 1-bit alpha) or DXT5 (smooth alpha) format.
@@ -1216,7 +1221,7 @@ Textures can have an accompanying XML file which specifies load-time parameters,
 <texture>
     <address coord="u|v|w" mode="wrap|mirror|clamp|border" />
     <border color="r g b a" />
-    <filter mode="nearest|bilinear|trilinear|anisotropic|default" />
+    <filter mode="nearest|bilinear|trilinear|anisotropic|default" anisotropy="x" />
     <mipmap enable="false|true" />
     <quality low="x" medium="y" high="z" />
     <srgb enable="false|true" />
@@ -1224,6 +1229,8 @@ Textures can have an accompanying XML file which specifies load-time parameters,
 \endcode
 
 The sRGB flag controls both whether the texture should be sampled with sRGB to linear conversion, and if used as a rendertarget, pixels should be converted back to sRGB when writing to it. To control whether the backbuffer should use sRGB conversion on write, call \ref Graphics::SetSRGB "SetSRGB()" on the Graphics subsystem.
+
+Anisotropy level can be optionally specified. If omitted (or if the value 0 is specified), the default from the Renderer class will be used.
 
 \section Materials_CubeMapTextures Cube map textures
 
@@ -1289,7 +1296,8 @@ A technique definition looks like this:
         blend="replace|add|multiply|alpha|addalpha|premulalpha|invdestalpha|subtract|subtractalpha"
         [cull="cw|ccw|none"]
         depthtest="always|equal|less|lessequal|greater|greaterequal"
-        depthwrite="true|false" />
+        depthwrite="true|false"
+        alphatocoverage="true|false" />
     <pass ... />
     <pass ... />
 </technique>
@@ -1502,7 +1510,7 @@ The render path XML definition looks like this:
 <renderpath>
     <rendertarget name="RTName" tag="TagName" enabled="true|false" cubemap="true|false" size="x y"|sizedivisor="x y"|sizemultiplier="x y"
         format="rgb|rgba|r32f|rgba16|rgba16f|rgba32f|rg16|rg16f|rg32f|lineardepth|readabledepth" filter="true|false" srgb="true|false" persistent="true|false" />
-    <command type="clear" tag="TagName" enabled="true|false" clearcolor="r g b a|fog" cleardepth="x" clearstencil="y" output="viewport|RTName" face="0|1|2|3|4|5" depthstencil="DSName" />
+    <command type="clear" tag="TagName" enabled="true|false" color="r g b a|fog" depth="x" stencil="y" output="viewport|RTName" face="0|1|2|3|4|5" depthstencil="DSName" />
     <command type="scenepass" pass="PassName" sort="fronttoback|backtofront" marktostencil="true|false" vertexlights="true|false" metadata="base|alpha|gbuffer" depthstencil="DSName">
         <output index="0" name="RTName1" face="0|1|2|3|4|5" />
         <output index="1" name="RTName2" />
