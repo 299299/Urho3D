@@ -335,6 +335,19 @@ uint useTimer;
 int weakRefs;
 };
 
+class AnimationControl
+{
+
+// Properties:
+float autoFadeTime;
+float fadeTime;
+StringHash hash;
+String name;
+bool removeOnCompletion;
+float speed;
+float targetWeight;
+};
+
 class AnimationController
 {
 // Methods:
@@ -410,6 +423,8 @@ const String& GetStartBone(const String&) const;
 // Properties:
 bool animationEnabled;
 /* readonly */
+Array<AnimationControl> animations;
+/* readonly */
 Array<Variant> attributeDefaults;
 /* readonly */
 Array<AttributeInfo> attributeInfos;
@@ -423,6 +438,8 @@ bool enabledEffective;
 uint id;
 /* readonly */
 Node node;
+/* readonly */
+uint numAnimations;
 /* readonly */
 uint numAttributes;
 ObjectAnimation objectAnimation;
@@ -6747,6 +6764,8 @@ bool Save(File) const;
 bool Save(VectorBuffer&) const;
 void SendEvent(const String&, VariantMap& = VariantMap ( ));
 bool SetGeometry(uint, uint, Geometry);
+bool SetIndexBuffers(Array<IndexBuffer>);
+bool SetVertexBuffers(Array<Array<Array<VertexBuffer>, uint>, uint>);
 
 // Properties:
 BoundingBox boundingBox;
