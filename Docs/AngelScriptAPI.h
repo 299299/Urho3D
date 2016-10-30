@@ -5352,6 +5352,7 @@ bool Save(File) const;
 bool Save(VectorBuffer&) const;
 bool Save(const String&) const;
 bool SaveBMP(const String&) const;
+bool SaveDDS(const String&) const;
 bool SaveJPG(const String&, int) const;
 bool SavePNG(const String&) const;
 bool SaveTGA(const String&) const;
@@ -12108,6 +12109,8 @@ Array<int> levelWidth;
 /* readonly */
 uint levels;
 /* readonly */
+bool levelsDirty;
+/* readonly */
 uint memoryUse;
 Array<int> mipsToSkip;
 /* readonly */
@@ -12176,6 +12179,8 @@ Array<int> levelHeight;
 Array<int> levelWidth;
 /* readonly */
 uint levels;
+/* readonly */
+bool levelsDirty;
 /* readonly */
 uint memoryUse;
 Array<int> mipsToSkip;
@@ -12248,6 +12253,8 @@ Array<int> levelWidth;
 /* readonly */
 uint levels;
 /* readonly */
+bool levelsDirty;
+/* readonly */
 uint memoryUse;
 Array<int> mipsToSkip;
 /* readonly */
@@ -12318,6 +12325,8 @@ Array<int> levelWidth;
 /* readonly */
 uint levels;
 /* readonly */
+bool levelsDirty;
+/* readonly */
 uint memoryUse;
 Array<int> mipsToSkip;
 /* readonly */
@@ -12386,6 +12395,8 @@ Array<int> levelHeight;
 Array<int> levelWidth;
 /* readonly */
 uint levels;
+/* readonly */
+bool levelsDirty;
 /* readonly */
 uint memoryUse;
 Array<int> mipsToSkip;
@@ -13750,7 +13761,7 @@ bool HasSubscribedToEvent(const String&);
 Vector3 ScreenToWorldPoint(int, int, float) const;
 void SendEvent(const String&, VariantMap& = VariantMap ( ));
 void SetRenderPath(XMLFile);
-Vector2 WorldToScreenPoint(const Vector3&) const;
+IntVector2 WorldToScreenPoint(const Vector3&) const;
 
 // Properties:
 Camera camera;
@@ -14921,6 +14932,7 @@ bool IsNaN(float);
 bool IsPowerOfTwo(uint);
 String Join(Array<String>&, const String&);
 float Lerp(float, float, float);
+float Ln(float);
 void MarkNetworkUpdate();
 float Max(float, float);
 int Max(int, int);
@@ -15200,6 +15212,7 @@ int KEY_SPACE;
 int KEY_T;
 int KEY_TAB;
 int KEY_U;
+int KEY_UNKNOWN;
 int KEY_UP;
 int KEY_V;
 int KEY_W;

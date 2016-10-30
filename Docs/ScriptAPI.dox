@@ -7466,6 +7466,7 @@ Methods:
 - bool Save(VectorBuffer&) const
 - bool Save(const String&) const
 - bool SaveBMP(const String&) const
+- bool SaveDDS(const String&) const
 - bool SaveJPG(const String&, int) const
 - bool SavePNG(const String&) const
 - bool SaveTGA(const String&) const
@@ -13452,6 +13453,7 @@ Properties:
 - int[] levelHeight // readonly
 - int[] levelWidth // readonly
 - uint levels // readonly
+- bool levelsDirty // readonly
 - uint memoryUse // readonly
 - int[] mipsToSkip
 - int multiSample // readonly
@@ -13504,6 +13506,7 @@ Properties:
 - int[] levelHeight // readonly
 - int[] levelWidth // readonly
 - uint levels // readonly
+- bool levelsDirty // readonly
 - uint memoryUse // readonly
 - int[] mipsToSkip
 - int multiSample // readonly
@@ -13557,6 +13560,7 @@ Properties:
 - int[] levelHeight // readonly
 - int[] levelWidth // readonly
 - uint levels // readonly
+- bool levelsDirty // readonly
 - uint memoryUse // readonly
 - int[] mipsToSkip
 - int multiSample // readonly
@@ -13609,6 +13613,7 @@ Properties:
 - int[] levelHeight // readonly
 - int[] levelWidth // readonly
 - uint levels // readonly
+- bool levelsDirty // readonly
 - uint memoryUse // readonly
 - int[] mipsToSkip
 - int multiSample // readonly
@@ -13661,6 +13666,7 @@ Properties:
 - int[] levelHeight // readonly
 - int[] levelWidth // readonly
 - uint levels // readonly
+- bool levelsDirty // readonly
 - uint memoryUse // readonly
 - int[] mipsToSkip
 - int multiSample // readonly
@@ -14875,7 +14881,7 @@ Methods:
 - Vector3 ScreenToWorldPoint(int, int, float) const
 - void SendEvent(const String&, VariantMap& = VariantMap ( ))
 - void SetRenderPath(XMLFile@)
-- Vector2 WorldToScreenPoint(const Vector3&) const
+- IntVector2 WorldToScreenPoint(const Vector3&) const
 
 Properties:
 
@@ -15993,6 +15999,7 @@ Properties:
 - bool IsPowerOfTwo(uint)
 - String Join(String[]&, const String&)
 - float Lerp(float, float, float)
+- float Ln(float)
 - void MarkNetworkUpdate()
 - float Max(float, float)
 - int Max(int, int)
@@ -16270,6 +16277,7 @@ Properties:
 - int KEY_T
 - int KEY_TAB
 - int KEY_U
+- int KEY_UNKNOWN
 - int KEY_UP
 - int KEY_V
 - int KEY_W
