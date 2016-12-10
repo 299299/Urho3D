@@ -352,12 +352,12 @@ void StaticSprite2D::UpdateDrawRect()
     {
         if (useHotSpot_)
         {
-            if (!sprite_->GetDrawRectangle(drawRect_, hotSpot_, flipX_, flipY_))
+            if (sprite_ && !sprite_->GetDrawRectangle(drawRect_, hotSpot_, flipX_, flipY_))
                 return;
         }
         else
         {
-            if (!sprite_->GetDrawRectangle(drawRect_, flipX_, flipY_))
+            if (sprite_ && !sprite_->GetDrawRectangle(drawRect_, flipX_, flipY_))
                 return;
         }
     }
