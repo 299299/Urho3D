@@ -603,6 +603,8 @@ Array<String> enumNames;
 uint mode;
 String name;
 VariantType type;
+/* readonly */
+Array<String> variantStructureElementNames;
 };
 
 class Audio
@@ -14056,6 +14058,7 @@ Matrix3 GetMatrix3(const String&) const;
 Matrix3x4 GetMatrix3x4(const String&) const;
 Matrix4 GetMatrix4(const String&) const;
 XMLElement GetNext(const String& = String ( )) const;
+XMLElement GetOrCreateChild(const String&);
 Quaternion GetQuaternion(const String&) const;
 ResourceRef GetResourceRef() const;
 ResourceRefList GetResourceRefList() const;
@@ -14127,6 +14130,7 @@ class XMLFile
 // Methods:
 XMLElement CreateRoot(const String&);
 bool FromString(const String&);
+XMLElement GetOrCreateRoot(const String&);
 XMLElement GetRoot(const String& = String ( ));
 bool HasSubscribedToEvent(Object, const String&);
 bool HasSubscribedToEvent(const String&);
@@ -14926,6 +14930,7 @@ uint GetMaxBones();
 String GetMiniDumpDir();
 uint GetNumLogicalCPUs();
 uint GetNumPhysicalCPUs();
+Array<AttributeInfo> GetObjectAttributeInfos(const String&);
 Array<String> GetObjectCategories();
 Array<String> GetObjectsByCategory(const String&);
 String GetParentPath(const String&);

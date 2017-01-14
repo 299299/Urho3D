@@ -3315,6 +3315,7 @@ Properties:
 - uint mode
 - String name
 - VariantType type
+- String[]@ variantStructureElementNames // readonly
 
 <a name="Class_Audio"></a>
 
@@ -15162,6 +15163,7 @@ Methods:
 - Matrix3x4 GetMatrix3x4(const String&) const
 - Matrix4 GetMatrix4(const String&) const
 - XMLElement GetNext(const String& = String ( )) const
+- XMLElement GetOrCreateChild(const String&)
 - Quaternion GetQuaternion(const String&) const
 - ResourceRef GetResourceRef() const
 - ResourceRefList GetResourceRefList() const
@@ -15229,6 +15231,7 @@ Methods:
 
 - XMLElement CreateRoot(const String&)
 - bool FromString(const String&)
+- XMLElement GetOrCreateRoot(const String&)
 - XMLElement GetRoot(const String& = String ( ))
 - bool HasSubscribedToEvent(Object@, const String&)
 - bool HasSubscribedToEvent(const String&)
@@ -16007,6 +16010,7 @@ Properties:
 - String GetMiniDumpDir()
 - uint GetNumLogicalCPUs()
 - uint GetNumPhysicalCPUs()
+- AttributeInfo[]@ GetObjectAttributeInfos(const String&)
 - String[]@ GetObjectCategories()
 - String[]@ GetObjectsByCategory(const String&)
 - String GetParentPath(const String&)
