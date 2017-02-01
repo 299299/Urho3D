@@ -348,6 +348,8 @@ Input::Input(Context* context) :
     mouseMoveScaled_(false),
     initialized_(false)
 {
+    context_->RequireSDL(SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER);
+
     for (int i = 0; i < TOUCHID_MAX; i++)
         availableTouchIDs_.Push(i);
 
@@ -365,6 +367,7 @@ Input::Input(Context* context) :
 
 Input::~Input()
 {
+    context_->ReleaseSDL();
 }
 
 void Input::Update()
