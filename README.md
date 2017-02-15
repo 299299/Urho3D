@@ -1,55 +1,217 @@
+![Urho3D logo](https://raw.githubusercontent.com/urho3d/Urho3D/master/bin/Data/Textures/LogoLarge.png)
 
-[My logo](https://raw.githubusercontent.com/299299/Urho3D/master/Docs/logo.jpg)
+#Urho3D
 
-#Android 环境手顺
+[![Join the chat at https://gitter.im/urho3d/Urho3D](https://badges.gitter.im/urho3d/Urho3D.svg)](https://gitter.im/urho3d/Urho3D?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-## Android PC win 7环境配置
+**Urho3D** is a free lightweight, cross-platform 2D and 3D game engine implemented in C++ and released under the MIT license. Greatly inspired by OGRE and Horde3D.
 
-  **1. 环境包下载：**
+Main website: [https://urho3d.github.io/](https://urho3d.github.io/)
 
-   下载地址 http://pan.baidu.com/s/1jGoZbMm 我的百度共享
+##License
+Licensed under the MIT license, see [LICENSE](https://github.com/urho3d/Urho3D/blob/master/LICENSE) for details.
 
-  可以选择都安装到比如 F:\Android 目录下
+##Contributing
+Before making pull requests, please read the [Contribution checklist](https://urho3d.github.io/documentation/HEAD/_contribution_checklist.html) and [Coding conventions](https://urho3d.github.io/documentation/HEAD/_coding_conventions.html) pages from the documentation.
 
-  **2.配置windows环境变量：**
+##Credits
+Urho3D development, contributions and bugfixes by:
+- Lasse Öörni (loorni@gmail.com, AgentC at GameDev.net)
+- Wei Tjong Yao
+- Aster Jian
+- Vivienne Anthony
+- Colin Barrett
+- Erik Beran
+- Gauthier Billot
+- Loic Blot
+- Danny Boisvert
+- Sergey Bosko
+- Lisandro Bruzzo
+- Carlo Carollo
+- Pete Chown
+- Christian Clavet
+- Sebastian Delatorre (primitivewaste)
+- Josh Engebretson
+- Chris Friesen
+- Alex Fuller
+- Henrik Heino
+- Mika Heinonen
+- Victor Holt
+- Johnathan Jenkins
+- Jukka Jylänki
+- Graham King
+- Jason Kinzer
+- Jan Korous
+- Eugene Kozlov
+- Gunnar Kriik
+- Aliaksandr Kryvashein
+- Artem Kulyk
+- Rokas Kupstys
+- Ali Kämäräinen
+- Pete Leigh
+- Arnis Lielturks
+- Frode 'Modanung' Lindeijer
+- Thorbjørn Lindeijer
+- Nathanial Lydick
+- Xavier Maupeu
+- Jonne Nauha
+- Paul Noome
+- David Palacios
+- Alex Parlett
+- Jordan Patterson
+- Anton Petrov
+- Vladimir Pobedinsky
+- Franck Poulain
+- Pranjal Raihan
+- Mariusz Richtscheid
+- Nick Royer
+- Jonathan Sandusky
+- Miika Santala
+- Anatoly Sennov
+- Matan Shukry
+- Bengt Soderstrom
+- Hualin Song
+- James Thomas
+- Joshua Tippetts
+- Konstantin Tomashevich
+- Yusuf Umar
+- Mateus Vendramini
+- Daniel Wiberg
+- Steven Zhang
+- AGreatFish
+- BlueMagnificent
+- Enhex
+- Fastran
+- Firegorilla
+- Gordon-F
+- Lumak
+- Magic.Lixin
+- Mike3D
+- MonkeyFirst
+- Ner'zhul
+- Newb I the Newbd
+- OvermindDL1
+- Scellow
+- Skrylar
+- TheComet93
+- Y-way
+- 1vanK
+- andmar1x
+- amadeus_osa
+- atship
+- att
+- celeron55
+- cosmy1
+- damu
+- dragonCASTjosh
+- feltech
+- fredakilla
+- gleblebedev
+- hdunderscore
+- lvshiling
+- marynate
+- mightyCelu
+- neat3d
+- nemerle
+- ninjastone
+- proller
+- raould
+- rasteron
+- reattiva
+- rifai
+- rikorin
+- skaiware
+- ssinai1
+- svifylabs
+- szamq
+- thebluefish
+- tommy3
+- yushli
 
-  JAVA_HOME = F:\Android\Java\jdk1.8.0_40
+Urho3D is greatly inspired by OGRE (http://www.ogre3d.org) and Horde3D
+(http://www.horde3d.org). Additional inspiration & research used:
+- Rectangle packing by Jukka Jylänki (clb)
+  http://clb.demon.fi/projects/rectangle-bin-packing
+- Tangent generation from Terathon
+  http://www.terathon.com/code/tangent.html
+- Fast, Minimum Storage Ray/Triangle Intersection by Möller & Trumbore
+  http://www.graphics.cornell.edu/pubs/1997/MT97.pdf
+- Linear-Speed Vertex Cache Optimisation by Tom Forsyth
+  http://home.comcast.net/~tom_forsyth/papers/fast_vert_cache_opt.html
+- Software rasterization of triangles based on Chris Hecker's
+  Perspective Texture Mapping series in the Game Developer magazine
+  http://chrishecker.com/Miscellaneous_Technical_Articles
+- Networked Physics by Glenn Fiedler
+  http://gafferongames.com/game-physics/networked-physics/
+- Euler Angle Formulas by David Eberly
+  https://www.geometrictools.com/Documentation/EulerAngles.pdf
+- Red Black Trees by Julienne Walker
+  http://eternallyconfuzzled.com/tuts/datastructures/jsw_tut_rbtree.aspx
+- Comparison of several sorting algorithms by Juha Nieminen
+  http://warp.povusers.org/SortComparison/
 
-  ANDROID_NDK = F:\Android\android-ndk
+Urho3D uses the following third-party libraries:
+- AngelScript 2.31.2 (http://www.angelcode.com/angelscript)
+- Boost 1.61.0 (http://www.boost.org) - only used for AngelScript generic bindings
+- Box2D 2.3.0 (http://box2d.org)
+- Bullet 2.83.6 (http://www.bulletphysics.org)
+- Civetweb 1.7 (https://github.com/civetweb/civetweb)
+- FreeType 2.7.1 (https://www.freetype.org)
+- GLEW 1.13.0 (http://glew.sourceforge.net)
+- jo_jpeg 1.52 (http://www.jonolick.com/uploads/7/9/2/1/7921194/jo_jpeg.cpp)
+- kNet (https://github.com/juj/kNet)
+- libcpuid 0.4.0 (https://github.com/anrieff/libcpuid)
+- Lua 5.1 (https://www.lua.org)
+- LuaJIT 2.1.0+ (http://www.luajit.org)
+- LZ4 r131 (https://github.com/Cyan4973/lz4)
+- MojoShader (https://icculus.org/mojoshader)
+- Mustache 1.0 (https://mustache.github.io, https://github.com/kainjow/Mustache)
+- nanodbc 2.12.4 (https://lexicalunit.github.io/nanodbc)
+- Open Asset Import Library (http://assimp.sourceforge.net)
+- pugixml 1.7 (http://pugixml.org)
+- rapidjson 0.11 (https://code.google.com/p/rapidjson)
+- Recast/Detour (https://github.com/memononen/recastnavigation)
+- SDL 2.0.5 (https://www.libsdl.org)
+- SQLite 3.16.2 (https://www.sqlite.org)
+- StanHull (https://codesuppository.blogspot.com/2006/03/john-ratcliffs-code-suppository-blog.html)
+- stb_image 2.12 (https://nothings.org)
+- stb_image_write 1.02 (https://nothings.org)
+- stb_rect_pack 0.08 (https://nothings.org)
+- stb_vorbis 1.09 (https://nothings.org)
+- tolua++ 1.0.93 (defunct - http://www.codenix.com/~tolua)
 
-  Path变量追加 F:\Android\android-ndk\prebuilt\windows-x86_64\bin;F:\Android\android-sdk\tools;F:\Android\android-sdk\platform-tools;F:\Android\apache-ant-1.9.4\bin
+DXT / ETC1 / PVRTC decompression code based on the Squish library and the Oolong
+Engine.
+Jack and mushroom models from the realXtend project. (https://www.realxtend.org)
+Ninja model and terrain, water, smoke, flare and status bar textures from OGRE.
+BlueHighway font from Larabie Fonts.
+Anonymous Pro font by Mark Simonson.
+NinjaSnowWar sounds by Veli-Pekka Tätilä.
+PBR textures from Substance Share. (https://share.allegorithmic.com)
+IBL textures from HDRLab's sIBL Archive.
+Dieselpunk Moto model by allexandr007.
+Mutant & Kachujin models from Mixamo.
 
-  注意这个是为了能使用 1. ant命令 2. android的make命令
+##Documentation
+Urho3D classes have been sparsely documented using Doxygen notation. To
+generate documentation into the "Docs" subdirectory, open the Doxyfile in the
+"Docs" subdirectory with doxywizard and click "Run doxygen" from the "Run" tab.
+Get Doxygen from http://www.doxygen.org & Graphviz from http://www.graphviz.org.
+See section "Documentation build" below on how to automate documentation
+generation as part of the build process.
 
-  **3.下载android的SDK Tools：**
+The documentation is also available online at
+  https://urho3d.github.io/documentation/HEAD/index.html
 
-  执行Android SDK Manager 根据调试手机选择你要的API Target包
+Documentation on how to build Urho3D:
+  https://urho3d.github.io/documentation/HEAD/_building.html
+Documentation on how to use Urho3D as external library
+  https://urho3d.github.io/documentation/HEAD/_using_library.html
 
-  (Optionally, also install Eclipse ADT plugin for building and deployment via Eclipse.)
+Replace HEAD with a specific release version in the above links to obtain the
+documentation pertinent to the specified release. Alternatively, use the
+document-switcher in the documentation website to do so.
 
-  **4.代码编译部署：**
-
-  1. 控制台执行 当前目录下的 make_android.bat (前提是NDK的环境变量都已配好)
-  2. cd .build/android ---> 进入目录
-  3. android update project -p . -t TARGET_ID  --->  这里TARGET_ID 是通过命令android list targets得到的 我的是android-16
-  4. make -j8 --->  第一次编译很慢
-  5. ant debug (或者release) ---> .build\android\bin 这里会生成一个apk包 ！
-  6. adb install 生成的apk包 就可以部署到手机里了
-
-  **5.代码开发：**
-
-  本身引擎自带anglescript的脚本 但是放到手机上有点大 可以直接写c++的代码
-
-  C++示例可以参考目录 Urho3D/Source/Samples
-
-
-  其他的平台可以参考 http://urho3d.github.io/documentation/1.32/_building.html
-
-
-  后续: 因为包太大 可以考虑 删除部分不必要的组件 比如脚本
-
-
-  这里提供一个android4.2 API编译的测试apk http://pan.baidu.com/s/1sj0qdkD 可以尝试跑一下该引擎以及示例
-
-  第一个游戏例子截图
-  ![screen shot](https://raw.githubusercontent.com/299299/Urho3D/master/Docs/shot1.jpg)
+##History
+The change history is available online at
+  https://urho3d.github.io/documentation/HEAD/_history.html
