@@ -982,6 +982,7 @@ elseif(UNIX)    # Urho3D - at this point both UNIX and UNIX_SYS should be equiva
     if (UDEV_H_INCLUDE_DIRS)
       set (HAVE_LIBUDEV_H TRUE)
       include_directories (${UDEV_H_INCLUDE_DIRS})
+      # TODO: find the shared library and store the result in the SDL_UDEV_DYNAMIC variable
     endif ()
 
     # Urho3D - bug fix - dbus/dbus.h is installed under path suffix 'dbus-1.0', so the following find_path() is needed even when not cross-compiling
@@ -1012,7 +1013,7 @@ elseif(UNIX)    # Urho3D - at this point both UNIX and UNIX_SYS should be equiva
       set(HAVE_IBUS_IBUS_H TRUE)
       include_directories(${IBUS_H_INCLUDE_DIRS} ${GLIB_H_INCLUDE_DIRS} ${GLIB_CONFIG_H_INCLUDE_DIRS})
       list(APPEND EXTRA_LIBS ibus-1.0)
-      add_definitions (-DSDL_USE_IME)
+      set (SDL_USE_IME 1)
     endif ()
 
     # Urho3D - bug fix - use find_path() to detect fcitx's header file so it works for both native and cross-compiling builds
@@ -1020,7 +1021,7 @@ elseif(UNIX)    # Urho3D - at this point both UNIX and UNIX_SYS should be equiva
     if (FCITX_H_INCLUDE_DIRS)
       set (HAVE_FCITX_FRONTEND_H TRUE)
       include_directories (${FCITX_H_INCLUDE_DIRS})
-      add_definitions (-DSDL_USE_IME)
+      set (SDL_USE_IME 1)
     endif ()
 
     # Urho3D - bug fix - moved below logic from generic Unix block to Linux-specific block
