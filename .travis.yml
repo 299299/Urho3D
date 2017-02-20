@@ -167,7 +167,7 @@ before_build:
   - set "APPVEYOR_REPO_COMMIT=%APPVEYOR_REPO_COMMIT%~"
   - ps: $env:COMMIT_MESSAGE = $(git log --format=%B -n 1 $env:APPVEYOR_REPO_COMMIT);
         if ($env:APPVEYOR_REPO_TAG -eq "true") { $env:RELEASE_TAG = $env:APPVEYOR_REPO_TAG_NAME };
-        if ($env:RELEASE_TAG -or ($env:APPVEYOR_REPO_BRANCH -eq "master" -and (!$env:APPVEYOR_PULL_REQUEST_NUMBER -and (select-string '\[ci package\]' -inputobject $env:COMMIT_MESSAGE))))
+        if ($env:RELEASE_TAG -or ($env:APPVEYOR_REPO_BRANCH -notmatch "[^-]+-[^-]+-CI" -and (select-string '\[ci package\]' -inputobject $env:COMMIT_MESSAGE)))
         {
           $env:PACKAGE_UPLOAD = "1";
           do { "Installing doxygen and graphviz..."; choco install doxygen.portable graphviz.portable >$null } until ($?);
