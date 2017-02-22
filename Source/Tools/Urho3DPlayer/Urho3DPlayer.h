@@ -56,7 +56,7 @@ private:
     String scriptFileName_;
     /// Flag whether CommandLine.txt was already successfully read.
     bool commandLineRead_;
-    
+
 #ifdef URHO3D_ANGELSCRIPT
     /// Script file.
     SharedPtr<ScriptFile> scriptFile_;

@@ -138,3 +138,41 @@ void Application::HandleLogMessage(StringHash eventType, VariantMap& eventData)
 
 
 }
+
+#include "../Engine/EngineDefs.h"
+namespace Urho3D
+{
+class FacePlayer : public Application
+{
+    URHO3D_OBJECT(FacePlayer, Application);
+public:
+    FacePlayer(Context* context):Application(context)
+    {
+        engineParameters_[EP_WINDOW_WIDTH] = 128;
+        engineParameters_[EP_WINDOW_HEIGHT] = 128;
+        engineParameters_[EP_FULL_SCREEN] = false;
+    }
+};
+}
+
+#if __cplusplus
+extern "C" {
+#endif
+
+int SDL_main(int argc, char** argv)
+{
+    SDL_SetMainReady();
+    Urho3D::Context* context = new Urho3D::Context();
+    Urho3D::FacePlayer* application = new Urho3D::FacePlayer(context);
+    return application->Run();
+}
+
+void TestFUCK()
+{
+    printf("FUCK\n");
+    SDL_main(0, 0);
+}
+
+#if __cplusplus
+}   // Extern C
+#endif

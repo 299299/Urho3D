@@ -49,6 +49,7 @@ static int exit_status;
 const char* resource_dir = 0;
 const char* documents_dir = 0;
 
+#if 0
 int main(int argc, char **argv)
 {
     int i;
@@ -75,10 +76,11 @@ int main(int argc, char **argv)
 
     return exit_status;
 }
+#endif
 
 // Urho3D: added function
 void SDL_IOS_LogMessage(const char *message)
-{   
+{
     #ifdef _DEBUG
     NSLog(@"%@", [NSString stringWithUTF8String: message]);
     #endif
@@ -93,7 +95,7 @@ const char* SDL_IOS_GetResourceDir()
         resource_dir = malloc(strlen(temp) + 1);
         strcpy(resource_dir, temp);
     }
-    
+
     return resource_dir;
 }
 
@@ -104,12 +106,12 @@ const char* SDL_IOS_GetDocumentsDir()
     {
         NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
         NSString *basePath = ([paths count] > 0) ? [paths objectAtIndex:0] : nil;
-        
+
         const char *temp = [basePath UTF8String];
         documents_dir = malloc(strlen(temp) + 1);
         strcpy(documents_dir, temp);
     }
-    
+
     return documents_dir;
 }
 
