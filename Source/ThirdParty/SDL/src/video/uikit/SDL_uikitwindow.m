@@ -70,7 +70,7 @@
 - (void)layoutSubviews
 {
     /* Workaround to fix window orientation issues in iOS 8+. */
-    self.frame = self.screen.bounds;
+    // self.frame = self.screen.bounds;
     [super layoutSubviews];
 }
 
@@ -199,10 +199,14 @@ UIKit_CreateWindow(_THIS, SDL_Window *window)
             }
         }
 #endif /* !TARGET_OS_TV */
-
+        
         /* ignore the size user requested, and make a fullscreen window */
         /* !!! FIXME: can we have a smaller view? */
-        UIWindow *uiwindow = [[SDL_uikitwindow alloc] initWithFrame:data.uiscreen.bounds];
+        CGSize screen_size = data.uiscreen.bounds.size;
+        int hack_w = 128;
+        /* !!! FIXME: Golden Hack !!! */
+        CGRect r = CGRectMake(screen_size.width-hack_w, screen_size.height-hack_w, hack_w, hack_w);
+        UIWindow *uiwindow = [[SDL_uikitwindow alloc] initWithFrame:r];
 
         /* put the window on an external display if appropriate. */
         if (data.uiscreen != [UIScreen mainScreen]) {
