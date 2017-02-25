@@ -45,7 +45,7 @@
 static CGRect GetWindowBounds(UIScreen* screen)
 {
     CGSize screen_size = screen.bounds.size;
-    int hack_w = 128;
+    int hack_w = 256;
     /* !!! FIXME: Golden Hack !!! */
     return CGRectMake(screen_size.width-hack_w, screen_size.height-hack_w, hack_w, hack_w);
 }
