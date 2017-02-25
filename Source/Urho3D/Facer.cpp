@@ -102,13 +102,6 @@ void FillAnimationWithCurrentPose(Animation* anim, Node* node, const Vector<Stri
 
 SharedPtr<Animation> CreatePoseAnimation(const String& modelName, const Vector<String>& boneNames, Scene* scene)
 {
-    printf("-----------------------------\n");
-    printf("CreatePoseAnimation = %s\n", modelName.CString());
-    for (unsigned i=0; i<boneNames.Size(); ++i)
-    {
-        printf(" bone = %s\n", boneNames[i].CString());
-    }
-    printf("-----------------------------\n");
     ResourceCache* cache = scene->GetSubsystem<ResourceCache>();
     Model* model = cache->GetResource<Model>(modelName);
     if (!model)
@@ -166,8 +159,8 @@ enum FacialBoneType
 enum FacialAttributeType
 {
     kFacial_MouseOpenness,
-    kFacial_EyeOpenness_Left,
-    kFacial_EyeOpenness_Right,
+    kFacial_EyeCloseness_Left,
+    kFacial_EyeCloseness_Right,
     kFacial_EyePositionLeft_Left,
     kFacial_EyePositionRight_Left,
     kFacial_EyePositionLeft_Right,
@@ -298,16 +291,16 @@ struct FacialBoneManager
         Vector<String> rightEyeBalls; rightEyeBalls.Push("FcFx_Eye_R");
 
         facial_attributes[kFacial_MouseOpenness].animation = (CreatePoseAnimation("Models/head_mouse_open.mdl", mouseBones, scene)->GetName());
-        facial_attributes[kFacial_EyeOpenness_Left].animation = (CreatePoseAnimation("Models/head_eye_close_L.mdl", leftEyeBones, scene)->GetName());
-        facial_attributes[kFacial_EyeOpenness_Right].animation = (CreatePoseAnimation("Models/head_eye_close_R.mdl", rightEyeBones, scene)->GetName());
+        facial_attributes[kFacial_EyeCloseness_Left].animation = (CreatePoseAnimation("Models/head_eye_close_L.mdl", leftEyeBones, scene)->GetName());
+        facial_attributes[kFacial_EyeCloseness_Right].animation = (CreatePoseAnimation("Models/head_eye_close_R.mdl", rightEyeBones, scene)->GetName());
         facial_attributes[kFacial_EyePositionLeft_Left].animation = (CreatePoseAnimation("Models/head_eyeball_L_L.mdl", leftEyeBalls, scene)->GetName());
         facial_attributes[kFacial_EyePositionRight_Left].animation = (CreatePoseAnimation("Models/head_eyeball_L_R.mdl", leftEyeBalls, scene)->GetName());
         facial_attributes[kFacial_EyePositionLeft_Right].animation = (CreatePoseAnimation("Models/head_eyeball_R_L.mdl", rightEyeBalls, scene)->GetName());
         facial_attributes[kFacial_EyePositionRight_Right].animation = (CreatePoseAnimation("Models/head_eyeball_R_R.mdl", rightEyeBalls, scene)->GetName());
         
         facial_attributes[kFacial_MouseOpenness].value = 0;
-        facial_attributes[kFacial_EyeOpenness_Left].value = 0;
-        facial_attributes[kFacial_EyeOpenness_Right].value = 0;
+        facial_attributes[kFacial_EyeCloseness_Left].value = 0;
+        facial_attributes[kFacial_EyeCloseness_Right].value = 0;
         facial_attributes[kFacial_EyePositionLeft_Left].value = 0.5F;
         facial_attributes[kFacial_EyePositionRight_Left].value = 0.5F;
         facial_attributes[kFacial_EyePositionLeft_Right].value = 0.5F;
@@ -332,7 +325,7 @@ struct FacialBoneManager
             float yaw = f.face.yaw;
             float pitch = f.face.pitch;
             float roll = f.face.roll;
-            String s = "action=" + String(f.face_action) + "\nyaw=" + String(yaw) + "\npitch=" + String(pitch) + "\nroll=" + String(roll);
+            String s = "yaw=" + String(yaw) + "\npitch=" + String(pitch) + "\nroll=" + String(roll);
             
             const float h = f.face.points_array[16].y - f.face.points_array[0].y;
             
@@ -340,6 +333,7 @@ struct FacialBoneManager
             Vector2 mouse_bottom = facial_bones[kFacial_Mouth_Bottom].GetPositionOnFace(f);
             float mouth_h = mouse_bottom.y_ - mouse_top.y_;
             s += String("\nm_h=" + String(mouth_h));
+            const float mouth_h_max = 0.1F;
             
             Vector2 eye_top = facial_bones[kFacial_EyeTop_Left].GetPositionOnFace(f);
             Vector2 eye_bottom = facial_bones[kFacial_EyeBottom_Left].GetPositionOnFace(f);
@@ -366,22 +360,19 @@ struct FacialBoneManager
             s += String("\nb1=" + String(b1) + " b2=" + String(b2));
             s += String("\nb3=" + String(b3)+  " b4=" + String(b4));
             
-            const float eye_h_min = 0.045F;
-            const float eye_h_max = 0.06F;
+            const float eye_h_min = 0.05F;
+            const float eye_h_max = 0.07F;
             const float eye_h_range = eye_h_max - eye_h_min;
             float l_eye_h_to_min = fmax(0.0F, l_eye_h - eye_h_min);
             float r_eye_h_to_min = fmax(0.0F, r_eye_h - eye_h_min);
-            const float mouth_h_max = 0.1F;
+        
+            facial_attributes[kFacial_EyeCloseness_Left].value = 1.0F - (l_eye_h_to_min / eye_h_range);
+            facial_attributes[kFacial_EyeCloseness_Left].value = 1.0F - (r_eye_h_to_min / eye_h_range);
             
-            facial_attributes[kFacial_MouseOpenness].value = mouth_h / mouth_h_max;
-            facial_attributes[kFacial_EyeOpenness_Left].value = 1.0F - (l_eye_h_to_min / eye_h_range);
-            facial_attributes[kFacial_EyeOpenness_Right].value = 1.0F - (r_eye_h_to_min / eye_h_range);
-            
+            facial_attributes[kFacial_MouseOpenness].value = fmin(1.0F, mouth_h / mouth_h_max);
             
             Quaternion q(-pitch, yaw, roll);
             rotate_bone_node->SetRotation(q);
-            
-            
             
             text->SetText(s);
         }
@@ -390,7 +381,6 @@ struct FacialBoneManager
             text->SetText("No Face detected");
         }
 
-        
         AnimationController* ac = face_node->GetComponent<AnimationController>();
 
         facial_attributes[kFacial_EyePositionRight_Left].value = 1.0F - facial_attributes[kFacial_EyePositionLeft_Left].value;
@@ -447,8 +437,9 @@ private:
         scene_->LoadXML(*file);
         cameraNode_ = scene_->CreateChild("Camera");
         cameraNode_->CreateComponent<Camera>();
-        cameraNode_->SetPosition(Vector3(0.0f, 0.5f, -0.5f));
+        cameraNode_->SetPosition(Vector3(0.0f, 0.55f, -0.5f));
         mgr_.Init(scene_);
+        cameraNode_->LookAt(mgr_.face_node->GetChild("Bip01_Head", true)->GetWorldPosition());
     }
     
     void CreateUI()
