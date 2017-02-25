@@ -42,6 +42,14 @@
 
 #include <Foundation/Foundation.h>
 
+static CGRect GetWindowBounds(UIScreen* screen)
+{
+    CGSize screen_size = screen.bounds.size;
+    int hack_w = 128;
+    /* !!! FIXME: Golden Hack !!! */
+    return CGRectMake(screen_size.width-hack_w, screen_size.height-hack_w, hack_w, hack_w);
+}
+
 @implementation SDL_WindowData
 
 @synthesize uiwindow;
@@ -70,7 +78,8 @@
 - (void)layoutSubviews
 {
     /* Workaround to fix window orientation issues in iOS 8+. */
-    // self.frame = self.screen.bounds;
+    //self.frame = self.screen.bounds;
+    self.frame = GetWindowBounds(self.screen);
     [super layoutSubviews];
 }
 
@@ -202,11 +211,7 @@ UIKit_CreateWindow(_THIS, SDL_Window *window)
         
         /* ignore the size user requested, and make a fullscreen window */
         /* !!! FIXME: can we have a smaller view? */
-        CGSize screen_size = data.uiscreen.bounds.size;
-        int hack_w = 128;
-        /* !!! FIXME: Golden Hack !!! */
-        CGRect r = CGRectMake(screen_size.width-hack_w, screen_size.height-hack_w, hack_w, hack_w);
-        UIWindow *uiwindow = [[SDL_uikitwindow alloc] initWithFrame:r];
+        UIWindow *uiwindow = [[SDL_uikitwindow alloc] initWithFrame:GetWindowBounds(data.uiscreen)];
 
         /* put the window on an external display if appropriate. */
         if (data.uiscreen != [UIScreen mainScreen]) {
