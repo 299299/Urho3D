@@ -72,6 +72,12 @@ typedef struct vs_models_human_action_t {
 
 vs_models_human_action_t* GetFacerAction();
     
+    typedef struct gpu_size_t{
+        uint32_t    width;
+        uint32_t    height;
+    }gpu_size_t;
+    gpu_size_t GetFrameSize();
+    
 #if __cplusplus
 }   // Extern C
 #endif
