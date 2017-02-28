@@ -71,13 +71,13 @@ typedef struct vs_models_human_action_t {
 } vs_models_human_action_t;
 
 vs_models_human_action_t* GetFacerAction();
-    
-    typedef struct gpu_size_t{
-        uint32_t    width;
-        uint32_t    height;
-    }gpu_size_t;
-    gpu_size_t GetFrameSize();
-    
+
+typedef struct gpu_size_t{
+    uint32_t    width;
+    uint32_t    height;
+}gpu_size_t;
+gpu_size_t GetFrameSize();
+
 #if __cplusplus
 }   // Extern C
 #endif
@@ -202,11 +202,25 @@ struct FacialBone
             // debug.AddCross(bone_node.worldPosition, 0.01, GREEN, false);
         }
     }
-    
-    Vector2 GetPositionOnFace(const vs_models_face_action_t& face) const
+
+    Vector2 GetPositionOnFace(const vs_models_face_action_t& face, bool normalized = true) const
     {
         vs_pointf_t pt = face.face.points_array[facial_index];
+        if (normalized)
+        {
+            Vector2 face_rect = GetFaceRect(face);
+            pt.x /= face_rect.x_;
+            pt.y /= face_rect.y_;
+        }
         return Vector2(pt.x, pt.y);
+    }
+
+    Vector2 GetFaceRect(const vs_models_face_action_t& face) const
+    {
+        Vector2 ret;
+        ret.x_ = face.right - face.left;
+        ret.y_ = face.bottom - face.top;
+        return ret;
     }
 
     int facial_bone_type;
@@ -249,10 +263,10 @@ struct FacialBoneManager
         facial_bones[kFacial_EyeTop_Right] = (FacialBone(kFacial_EyeTop_Right, 72, "FcFX_EyLd_Top_R"));
         facial_bones[kFacial_EyeBottom_Left] = (FacialBone(kFacial_EyeBottom_Left, 76, "FcFX_EyLd_Bottom_L"));
         facial_bones[kFacial_EyeBottom_Right] = (FacialBone(kFacial_EyeBottom_Right, 73, "FcFX_EyLd_Bottom_R"));
-        
+
         facial_bones[kFacial_EyeLeft_Left] = (FacialBone(kFacial_EyeLeft_Left, 61, NULL));
         facial_bones[kFacial_EyeRight_Left] = (FacialBone(kFacial_EyeRight_Left, 58, NULL));
-        
+
         facial_bones[kFacial_EyeLeft_Right] = (FacialBone(kFacial_EyeLeft_Right, 55, NULL));
         facial_bones[kFacial_EyeRight_Right] = (FacialBone(kFacial_EyeRight_Right, 52, NULL));
 
@@ -262,14 +276,14 @@ struct FacialBoneManager
     void Init(Scene* scene)
     {
         face_node = scene->GetChild("Head", true);
-        
+
         AnimatedModel* am = face_node->GetComponent<AnimatedModel>();
         am->SetCastShadows(false);
-        
+
         Bone* b = am->GetSkeleton().GetBone(rotate_bone_name);
         b->animated_ = false;
         rotate_bone_node = face_node->GetChild(rotate_bone_name, true);
-        
+
         for (uint i=0; i<kFacial_Bone_Num; ++i)
         {
             facial_bones[i].LoadNode(face_node);
@@ -303,7 +317,7 @@ struct FacialBoneManager
         facial_attributes[kFacial_EyePositionRight_Left].animation = (CreatePoseAnimation("Models/head_eyeball_L_R.mdl", leftEyeBalls, scene)->GetName());
         facial_attributes[kFacial_EyePositionLeft_Right].animation = (CreatePoseAnimation("Models/head_eyeball_R_L.mdl", rightEyeBalls, scene)->GetName());
         facial_attributes[kFacial_EyePositionRight_Right].animation = (CreatePoseAnimation("Models/head_eyeball_R_R.mdl", rightEyeBalls, scene)->GetName());
-        
+
         facial_attributes[kFacial_MouseOpenness].value = 0;
         facial_attributes[kFacial_EyeCloseness_Left].value = 0;
         facial_attributes[kFacial_EyeCloseness_Right].value = 0;
@@ -332,54 +346,56 @@ struct FacialBoneManager
             float pitch = f.face.pitch;
             float roll = f.face.roll;
             String s = "yaw=" + String(yaw) + "\npitch=" + String(pitch) + "\nroll=" + String(roll);
-            
-            const float h = f.face.points_array[16].y - f.face.points_array[0].y;
-            
+
             Vector2 mouse_top = facial_bones[kFacial_Mouth_Top].GetPositionOnFace(f);
             Vector2 mouse_bottom = facial_bones[kFacial_Mouth_Bottom].GetPositionOnFace(f);
             float mouth_h = mouse_bottom.y_ - mouse_top.y_;
             s += String("\nm_h=" + String(mouth_h));
             const float mouth_h_max = 0.1F;
-            
+
             Vector2 eye_top = facial_bones[kFacial_EyeTop_Left].GetPositionOnFace(f);
             Vector2 eye_bottom = facial_bones[kFacial_EyeBottom_Left].GetPositionOnFace(f);
-            float l_eye_h = (eye_bottom.y_ - eye_top.y_)/h;
+            float l_eye_h = (eye_bottom.y_ - eye_top.y_);
             s += String("\nle_h=" + String(l_eye_h));
-            
+
             eye_top = facial_bones[kFacial_EyeTop_Right].GetPositionOnFace(f);
             eye_bottom = facial_bones[kFacial_EyeBottom_Right].GetPositionOnFace(f);
-            float r_eye_h = (eye_bottom.y_ - eye_top.y_)/h;
+            float r_eye_h = (eye_bottom.y_ - eye_top.y_);
             s += String("\nre_h=" + String(r_eye_h));
-            
+
             float eye1 = facial_bones[kFacial_EyeBall_Left].GetPositionOnFace(f).x_;
             float eye2 = facial_bones[kFacial_EyeLeft_Left].GetPositionOnFace(f).x_;
             float eye3 = facial_bones[kFacial_EyeRight_Left].GetPositionOnFace(f).x_;
             float b1 = fabs(eye1 - eye3);
             float b2 = fabs(eye1 - eye2);
-            
+
             eye1 = facial_bones[kFacial_EyeBall_Right].GetPositionOnFace(f).x_;
             eye2 = facial_bones[kFacial_EyeLeft_Right].GetPositionOnFace(f).x_;
             eye3 = facial_bones[kFacial_EyeRight_Right].GetPositionOnFace(f).x_;
             float b3 = fabs(eye1 - eye3);
             float b4 = fabs(eye1 - eye2);
-            
+
             s += String("\nb1=" + String(b1) + " b2=" + String(b2));
             s += String("\nb3=" + String(b3)+  " b4=" + String(b4));
-            
+
             const float eye_h_min = 0.05F;
             const float eye_h_max = 0.07F;
             const float eye_h_range = eye_h_max - eye_h_min;
             float l_eye_h_to_min = fmax(0.0F, l_eye_h - eye_h_min);
             float r_eye_h_to_min = fmax(0.0F, r_eye_h - eye_h_min);
-        
+
             facial_attributes[kFacial_EyeCloseness_Left].value = 1.0F - (l_eye_h_to_min / eye_h_range);
-            facial_attributes[kFacial_EyeCloseness_Left].value = 1.0F - (r_eye_h_to_min / eye_h_range);
-            
+            facial_attributes[kFacial_EyeCloseness_Right].value = 1.0F - (r_eye_h_to_min / eye_h_range);
             facial_attributes[kFacial_MouseOpenness].value = fmin(1.0F, mouth_h / mouth_h_max);
-            
+
             Quaternion q(-pitch, yaw, roll);
             rotate_bone_node->SetRotation(q);
-            
+
+            if (f.face_action & VS_EYE_BLINK)
+            {
+                s += "Blink";
+            }
+
             text->SetText(s);
         }
         else
@@ -408,14 +424,24 @@ public:
 
     virtual void Setup()
     {
-        // Modify engine startup parameters
-        engineParameters_[EP_WINDOW_TITLE] = GetTypeName();
-        engineParameters_[EP_LOG_NAME]     = GetSubsystem<FileSystem>()->GetAppPreferencesDir("urho3d", "logs") + GetTypeName() + ".log";
-        engineParameters_[EP_FULL_SCREEN]  = false;
-        engineParameters_[EP_HEADLESS]     = false;
-        engineParameters_[EP_SOUND]        = false;
-        if (!engineParameters_.Contains(EP_RESOURCE_PREFIX_PATHS))
-            engineParameters_[EP_RESOURCE_PREFIX_PATHS] = ";../share/Resources;../share/Urho3D/Resources";
+        FileSystem* filesystem = GetSubsystem<FileSystem>();
+        const String commandFileName = filesystem->GetProgramDir() + "Data/CommandLine.txt";
+        if (GetArguments().Empty() && filesystem->FileExists(commandFileName))
+        {
+            SharedPtr<File> commandFile(new File(context_, commandFileName));
+            if (commandFile->IsOpen())
+            {
+                commandLineRead_ = true;
+                String commandLine = commandFile->ReadLine();
+                commandFile->Close();
+                ParseArguments(commandLine, false);
+                // Reparse engine startup parameters now
+                engineParameters_ = Engine::ParseParameters(GetArguments());
+            }
+        }
+
+        //if (!engineParameters_.Contains(EP_RESOURCE_PREFIX_PATHS))
+        //    engineParameters_[EP_RESOURCE_PREFIX_PATHS] = ";../share/Resources;../share/Urho3D/Resources";
     }
 
     virtual void Start()
@@ -431,7 +457,6 @@ public:
 
     virtual void Stop()
     {
-
     }
 
 private:
@@ -447,7 +472,7 @@ private:
         mgr_.Init(scene_);
         cameraNode_->LookAt(mgr_.face_node->GetChild("Bip01_Head", true)->GetWorldPosition());
     }
-    
+
     void CreateUI()
     {
         ResourceCache* cache = GetSubsystem<ResourceCache>();
@@ -466,12 +491,12 @@ private:
         SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
         renderer->SetViewport(0, viewport);
     }
-    
+
     void SubscribeToEvents()
     {
         SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(FacePlayer, HandleUpdate));
     }
-    
+
     void HandleUpdate(StringHash eventType, VariantMap& eventData)
     {
         using namespace Update;
