@@ -29,7 +29,8 @@
 #include "Scene/SceneEvents.h"
 #include "Core/CoreEvents.h"
 
-const char* rotate_bone_name = "Bip01_Spine3_$AssimpFbx$_Translation";
+const char* rotate_bone_name = "rabbit2:Bip01_Head";
+const char* head_bone_name = "rabbit2:Bip01_Head";
 
 #if __cplusplus
 extern "C" {
@@ -247,22 +248,22 @@ struct FacialBoneManager
     :face_node(NULL)
     ,rotate_bone_node(NULL)
     {
-        facial_bones[kFacial_Jaw] = (FacialBone(kFacial_Jaw, 16, "FcFX_Jaw"));
+        facial_bones[kFacial_Jaw] = (FacialBone(kFacial_Jaw, 16, "rabbit2:FcFX_Jaw"));
         facial_bones[kFacial_Nose] = (FacialBone(kFacial_Nose, 46, NULL));
-        facial_bones[kFacial_Nose_Left] = (FacialBone(kFacial_Nose_Left, 83, "FcFX_Nose_L"));
-        facial_bones[kFacial_Node_Right] = (FacialBone(kFacial_Node_Right, 82, "FcFX_Nose_R"));
+        facial_bones[kFacial_Nose_Left] = (FacialBone(kFacial_Nose_Left, 83, "rabbit2:FcFX_Nose_L"));
+        facial_bones[kFacial_Node_Right] = (FacialBone(kFacial_Node_Right, 82, "rabbit2:FcFX_Nose_R"));
 
-        facial_bones[kFacial_Mouth_Bottom] = (FacialBone(kFacial_Mouth_Bottom, 102, "FcFX_Mouth_07"));
-        facial_bones[kFacial_Mouth_Top] = (FacialBone(kFacial_Mouth_Top, 98, "FcFX_Mouth_03"));
-        facial_bones[kFacial_Mouth_Left] = (FacialBone(kFacial_Mouth_Left, 90, "FcFX_Mouth_05"));
-        facial_bones[kFacial_Mouth_Right] = (FacialBone(kFacial_Mouth_Right, 84, "FcFX_Mouth_01"));
+        facial_bones[kFacial_Mouth_Bottom] = (FacialBone(kFacial_Mouth_Bottom, 102, "rabbit2:FcFX_Mouth_08"));
+        facial_bones[kFacial_Mouth_Top] = (FacialBone(kFacial_Mouth_Top, 98, "rabbit2:FcFX_Mouth_010"));
+        facial_bones[kFacial_Mouth_Left] = (FacialBone(kFacial_Mouth_Left, 90, "rabbit2:FcFX_Mouth_05"));
+        facial_bones[kFacial_Mouth_Right] = (FacialBone(kFacial_Mouth_Right, 84, "rabbit2:FcFX_Mouth_012"));
 
-        facial_bones[kFacial_EyeBall_Left] = (FacialBone(kFacial_EyeBall_Left, 105, "FcFX_Eye_L"));
-        facial_bones[kFacial_EyeBall_Right] = (FacialBone(kFacial_EyeBall_Right, 104, "FcFX_Eye_R"));
-        facial_bones[kFacial_EyeTop_Left] = (FacialBone(kFacial_EyeTop_Left, 75, "FcFX_EyLd_Top_L"));
-        facial_bones[kFacial_EyeTop_Right] = (FacialBone(kFacial_EyeTop_Right, 72, "FcFX_EyLd_Top_R"));
-        facial_bones[kFacial_EyeBottom_Left] = (FacialBone(kFacial_EyeBottom_Left, 76, "FcFX_EyLd_Bottom_L"));
-        facial_bones[kFacial_EyeBottom_Right] = (FacialBone(kFacial_EyeBottom_Right, 73, "FcFX_EyLd_Bottom_R"));
+        facial_bones[kFacial_EyeBall_Left] = (FacialBone(kFacial_EyeBall_Left, 105, "rabbit2:FcFX_Eye_L"));
+        facial_bones[kFacial_EyeBall_Right] = (FacialBone(kFacial_EyeBall_Right, 104, "rabbit2:FcFX_Eye_R"));
+        facial_bones[kFacial_EyeTop_Left] = (FacialBone(kFacial_EyeTop_Left, 75, "rabbit2:FcFX_EyLd_Top_L"));
+        facial_bones[kFacial_EyeTop_Right] = (FacialBone(kFacial_EyeTop_Right, 72, "rabbit2:FcFX_EyLd_Top_R"));
+        facial_bones[kFacial_EyeBottom_Left] = (FacialBone(kFacial_EyeBottom_Left, 76, "rabbit2:FcFX_EyLd_Bottom_L"));
+        facial_bones[kFacial_EyeBottom_Right] = (FacialBone(kFacial_EyeBottom_Right, 73, "rabbit2:FcFX_EyLd_Bottom_R"));
 
         facial_bones[kFacial_EyeLeft_Left] = (FacialBone(kFacial_EyeLeft_Left, 61, NULL));
         facial_bones[kFacial_EyeRight_Left] = (FacialBone(kFacial_EyeRight_Left, 58, NULL));
@@ -289,35 +290,36 @@ struct FacialBoneManager
             facial_bones[i].LoadNode(face_node);
         }
 
-        Vector<String> jawBones = GetChildNodeNames(face_node->GetChild("FcFX_Jaw", true));
-        Vector<String> mouseBones;
-        for (uint i=0; i<jawBones.Size(); ++i)
-            mouseBones.Push(jawBones[i]);
         Vector<String> boneNames = GetChildNodeNames(face_node);
+        Vector<String> mouthBones;
         Vector<String> leftEyeBones;
         Vector<String> rightEyeBones;
+        
         for (uint i=0; i<boneNames.Size(); ++i)
         {
-            if (boneNames[i].EndsWith("_L") && boneNames[i] != "FcFx_Eye_L")
+            if (boneNames[i].Contains("Mouth"))
+                mouthBones.Push(boneNames[i]);
+        }
+        mouthBones.Push("rabbit2:FcFX_Jaw");
+        
+        for (uint i=0; i<boneNames.Size(); ++i)
+        {
+            if (boneNames[i].Contains("Ey") && boneNames[i].EndsWith("_L") && boneNames[i] != facial_bones[kFacial_EyeBall_Left].bone_name)
             {
                 leftEyeBones.Push(boneNames[i]);
             }
-            if (boneNames[i].EndsWith("_R") && boneNames[i] != "FcFx_Eye_R")
+            if (boneNames[i].Contains("Ey") && boneNames[i].EndsWith("_R") && boneNames[i] != facial_bones[kFacial_EyeBall_Right].bone_name)
             {
                 rightEyeBones.Push(boneNames[i]);
             }
         }
-        Vector<String> leftEyeBalls; leftEyeBalls.Push("FcFx_Eye_L");
-        Vector<String> rightEyeBalls; rightEyeBalls.Push("FcFx_Eye_R");
+        Vector<String> leftEyeBalls; leftEyeBalls.Push(facial_bones[kFacial_EyeBall_Left].bone_name);
+        Vector<String> rightEyeBalls; rightEyeBalls.Push(facial_bones[kFacial_EyeBall_Right].bone_name);
 
-        facial_attributes[kFacial_MouseOpenness].animation = (CreatePoseAnimation("Models/head_mouse_open.mdl", mouseBones, scene)->GetName());
-        facial_attributes[kFacial_EyeCloseness_Left].animation = (CreatePoseAnimation("Models/head_eye_close_L.mdl", leftEyeBones, scene)->GetName());
-        facial_attributes[kFacial_EyeCloseness_Right].animation = (CreatePoseAnimation("Models/head_eye_close_R.mdl", rightEyeBones, scene)->GetName());
-        facial_attributes[kFacial_EyePositionLeft_Left].animation = (CreatePoseAnimation("Models/head_eyeball_L_L.mdl", leftEyeBalls, scene)->GetName());
-        facial_attributes[kFacial_EyePositionRight_Left].animation = (CreatePoseAnimation("Models/head_eyeball_L_R.mdl", leftEyeBalls, scene)->GetName());
-        facial_attributes[kFacial_EyePositionLeft_Right].animation = (CreatePoseAnimation("Models/head_eyeball_R_L.mdl", rightEyeBalls, scene)->GetName());
-        facial_attributes[kFacial_EyePositionRight_Right].animation = (CreatePoseAnimation("Models/head_eyeball_R_R.mdl", rightEyeBalls, scene)->GetName());
-
+        facial_attributes[kFacial_MouseOpenness].animation = (CreatePoseAnimation("Models/rabbit_mouse_open.mdl", mouthBones, scene)->GetName());
+        facial_attributes[kFacial_EyeCloseness_Left].animation = (CreatePoseAnimation("Models/rabbit_eye_close_L.mdl", leftEyeBones, scene)->GetName());
+        facial_attributes[kFacial_EyeCloseness_Right].animation = (CreatePoseAnimation("Models/rabbit_eye_close_R.mdl", rightEyeBones, scene)->GetName());
+ 
         facial_attributes[kFacial_MouseOpenness].value = 0;
         facial_attributes[kFacial_EyeCloseness_Left].value = 0;
         facial_attributes[kFacial_EyeCloseness_Right].value = 0;
@@ -434,13 +436,9 @@ public:
                 String commandLine = commandFile->ReadLine();
                 commandFile->Close();
                 ParseArguments(commandLine, false);
-                // Reparse engine startup parameters now
                 engineParameters_ = Engine::ParseParameters(GetArguments());
             }
         }
-
-        //if (!engineParameters_.Contains(EP_RESOURCE_PREFIX_PATHS))
-        //    engineParameters_[EP_RESOURCE_PREFIX_PATHS] = ";../share/Resources;../share/Urho3D/Resources";
     }
 
     virtual void Start()
@@ -467,9 +465,9 @@ private:
         scene_->LoadXML(*file);
         cameraNode_ = scene_->CreateChild("Camera");
         cameraNode_->CreateComponent<Camera>();
-        cameraNode_->SetPosition(Vector3(0.0f, 0.55f, -0.5f));
+        cameraNode_->SetPosition(Vector3(0.0f, 0.75f, -1.5f));
         mgr_.Init(scene_);
-        cameraNode_->LookAt(mgr_.face_node->GetChild("Bip01_Head", true)->GetWorldPosition());
+        cameraNode_->LookAt(mgr_.face_node->GetChild(head_bone_name, true)->GetWorldPosition());
     }
 
     void CreateUI()
