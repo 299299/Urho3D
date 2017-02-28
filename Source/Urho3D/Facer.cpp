@@ -218,8 +218,8 @@ struct FacialBone
     Vector2 GetFaceRect(const vs_models_face_action_t& face) const
     {
         Vector2 ret;
-        ret.x_ = face.right - face.left;
-        ret.y_ = face.bottom - face.top;
+        ret.x_ = face.face.rect.right - face.face.rect.left;
+        ret.y_ = face.face.rect.bottom - face.face.rect.top;
         return ret;
     }
 
@@ -431,7 +431,6 @@ public:
             SharedPtr<File> commandFile(new File(context_, commandFileName));
             if (commandFile->IsOpen())
             {
-                commandLineRead_ = true;
                 String commandLine = commandFile->ReadLine();
                 commandFile->Close();
                 ParseArguments(commandLine, false);
