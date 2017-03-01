@@ -1,9 +1,6 @@
 #include "Precompiled.h"
 #include "Engine/Application.h"
-#ifdef IOS
 #include "Graphics/Graphics.h"
-#include <SDL/SDL.h>
-#endif
 #include "DebugNew.h"
 #include "Engine/EngineDefs.h"
 #include "UI/Sprite.h"
@@ -28,6 +25,8 @@
 #include "IO/Log.h"
 #include "Scene/SceneEvents.h"
 #include "Core/CoreEvents.h"
+#include <SDL/SDL.h>
+#include <stdio.h>
 
 const char* rotate_bone_name = "rabbit2:Bip01_Head";
 const char* head_bone_name = "rabbit2:Bip01_Head";
@@ -86,10 +85,79 @@ gpu_size_t GetFrameSize();
 namespace Urho3D
 {
 
+enum FacialBoneType
+{
+    kFacial_ForeHead,
+    kFacial_Nose,
+    kFacial_Nose_Left,
+    kFacial_Node_Right,
+    kFacial_Jaw,
+    kFacial_Mouth_Bottom,
+    kFacial_Mouth_Top,
+    kFacial_Mouth_Left,
+    kFacial_Mouth_Right,
+    kFacial_EyeBall_Left,
+    kFacial_EyeBall_Right,
+    kFacial_EyeTop_Left,
+    kFacial_EyeTop_Right,
+    kFacial_EyeBottom_Left,
+    kFacial_EyeBottom_Right,
+    kFacial_EyeLeft_Left,
+    kFacial_EyeRight_Left,
+    kFacial_EyeLeft_Right,
+    kFacial_EyeRight_Right,
+    kFacial_Bone_Num
+};
+
+enum FacialAttributeType
+{
+    kFacial_MouseOpenness,
+    kFacial_EyeCloseness_Left,
+    kFacial_EyeCloseness_Right,
+    kFacial_EyePositionLeft_Left,
+    kFacial_EyePositionRight_Left,
+    kFacial_EyePositionLeft_Right,
+    kFacial_EyePositionRight_Right,
+    kFacial_Attribute_Num
+};
+
+enum FacialAnimationLayer
+{
+    kFacial_Animation_Base_Layer,
+    kFacial_Animation_Action_Layer,
+};
+
+void FilterOutAnimationBones(const String& animName, ResourceCache* cache, const Vector<String>& boneNames)
+{
+    Animation* anim = cache->GetResource<Animation>(animName);
+    if (!anim)
+        return;
+
+    const HashMap<StringHash, AnimationTrack>& tracks = anim->GetTracks();
+    HashMap<StringHash, AnimationTrack>::ConstIterator i = tracks.Begin();
+    for (; i!= tracks.End(); ++i)
+    {
+        bool found = false;
+        for (unsigned j=0; j<boneNames.Size(); ++j)
+        {
+            if (i->first_ == StringHash(boneNames[j]))
+            {
+                found = true;
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            anim->GetTrack(i->first_)->channelMask_ = 0;
+        }
+    }
+}
+
 void FillAnimationWithCurrentPose(Animation* anim, Node* node, const Vector<String>& boneNames)
 {
     anim->RemoveAllTracks();
-    for (uint i=0; i<boneNames.Size(); ++i)
+    for (unsigned i=0; i<boneNames.Size(); ++i)
     {
         Node* n = node->GetChild(boneNames[i], true);
         if (!n)
@@ -132,48 +200,13 @@ Vector<String> GetChildNodeNames(Node* node)
     Vector<String> nodeNames;
     nodeNames.Push(node->GetName());
     PODVector<Node*> children = node->GetChildren(true);
-    for (uint i=0; i<children.Size(); ++i)
+    for (unsigned i=0; i<children.Size(); ++i)
     {
         nodeNames.Push(children[i]->GetName());
     }
     return nodeNames;
 }
 
-enum FacialBoneType
-{
-    kFacial_ForeHead,
-    kFacial_Nose,
-    kFacial_Nose_Left,
-    kFacial_Node_Right,
-    kFacial_Jaw,
-    kFacial_Mouth_Bottom,
-    kFacial_Mouth_Top,
-    kFacial_Mouth_Left,
-    kFacial_Mouth_Right,
-    kFacial_EyeBall_Left,
-    kFacial_EyeBall_Right,
-    kFacial_EyeTop_Left,
-    kFacial_EyeTop_Right,
-    kFacial_EyeBottom_Left,
-    kFacial_EyeBottom_Right,
-    kFacial_EyeLeft_Left,
-    kFacial_EyeRight_Left,
-    kFacial_EyeLeft_Right,
-    kFacial_EyeRight_Right,
-    kFacial_Bone_Num
-};
-
-enum FacialAttributeType
-{
-    kFacial_MouseOpenness,
-    kFacial_EyeCloseness_Left,
-    kFacial_EyeCloseness_Right,
-    kFacial_EyePositionLeft_Left,
-    kFacial_EyePositionRight_Left,
-    kFacial_EyePositionLeft_Right,
-    kFacial_EyePositionRight_Right,
-    kFacial_Attribute_Num
-};
 
 
 struct FacialBone
@@ -219,8 +252,8 @@ struct FacialBone
     Vector2 GetFaceRect(const vs_models_face_action_t& face) const
     {
         Vector2 ret;
-        ret.x_ = face.face.rect.right - face.face.rect.left;
-        ret.y_ = face.face.rect.bottom - face.face.rect.top;
+        ret.x_ = static_cast<float>(face.face.rect.right - face.face.rect.left);
+        ret.y_ = static_cast<float>(face.face.rect.bottom - face.face.rect.top);
         return ret;
     }
 
@@ -243,6 +276,8 @@ struct FacialBoneManager
     FacialAttribute facial_attributes[kFacial_Attribute_Num];
     Node* face_node;
     Node* rotate_bone_node;
+
+    String base_animation;
 
     FacialBoneManager()
     :face_node(NULL)
@@ -285,7 +320,7 @@ struct FacialBoneManager
         b->animated_ = false;
         rotate_bone_node = face_node->GetChild(rotate_bone_name, true);
 
-        for (uint i=0; i<kFacial_Bone_Num; ++i)
+        for (unsigned i=0; i<kFacial_Bone_Num; ++i)
         {
             facial_bones[i].LoadNode(face_node);
         }
@@ -294,15 +329,15 @@ struct FacialBoneManager
         Vector<String> mouthBones;
         Vector<String> leftEyeBones;
         Vector<String> rightEyeBones;
-        
-        for (uint i=0; i<boneNames.Size(); ++i)
+
+        for (unsigned i=0; i<boneNames.Size(); ++i)
         {
             if (boneNames[i].Contains("Mouth"))
                 mouthBones.Push(boneNames[i]);
         }
         mouthBones.Push("rabbit2:FcFX_Jaw");
-        
-        for (uint i=0; i<boneNames.Size(); ++i)
+
+        for (unsigned i=0; i<boneNames.Size(); ++i)
         {
             if (boneNames[i].Contains("Ey") && boneNames[i].EndsWith("_L") && boneNames[i] != facial_bones[kFacial_EyeBall_Left].bone_name)
             {
@@ -319,7 +354,7 @@ struct FacialBoneManager
         facial_attributes[kFacial_MouseOpenness].animation = (CreatePoseAnimation("Models/rabbit_mouse_open.mdl", mouthBones, scene)->GetName());
         facial_attributes[kFacial_EyeCloseness_Left].animation = (CreatePoseAnimation("Models/rabbit_eye_close_L.mdl", leftEyeBones, scene)->GetName());
         facial_attributes[kFacial_EyeCloseness_Right].animation = (CreatePoseAnimation("Models/rabbit_eye_close_R.mdl", rightEyeBones, scene)->GetName());
- 
+
         facial_attributes[kFacial_MouseOpenness].value = 0;
         facial_attributes[kFacial_EyeCloseness_Left].value = 0;
         facial_attributes[kFacial_EyeCloseness_Right].value = 0;
@@ -328,11 +363,15 @@ struct FacialBoneManager
         facial_attributes[kFacial_EyePositionLeft_Right].value = 0.5F;
         facial_attributes[kFacial_EyePositionRight_Right].value = 0.5F;
 
+
+        base_animation = "Animation/rabbit_ear_motion_Take 001.ani";
+        AnimationController* ac = face_node->GetComponent<AnimationController>();
+        ac->PlayExclusive(base_animation, kFacial_Animation_Base_Layer, true, 0.5);
     }
 
     void DebugDraw(DebugRenderer* debug)
     {
-        for (uint i=0; i<kFacial_Bone_Num; ++i)
+        for (unsigned i=0; i<kFacial_Bone_Num; ++i)
         {
             facial_bones[i].DebugDraw(debug);
         }
@@ -410,9 +449,9 @@ struct FacialBoneManager
         facial_attributes[kFacial_EyePositionRight_Left].value = 1.0F - facial_attributes[kFacial_EyePositionLeft_Left].value;
         facial_attributes[kFacial_EyePositionRight_Right].value = 1.0F - facial_attributes[kFacial_EyePositionLeft_Right].value;
 
-        for (uint i=0; i<kFacial_Attribute_Num; ++i)
+        for (unsigned i=0; i<kFacial_Attribute_Num; ++i)
         {
-            ac->Play(facial_attributes[i].animation, 0, false, 0);
+            ac->Play(facial_attributes[i].animation, kFacial_Animation_Action_Layer, false, 0);
             ac->SetWeight(facial_attributes[i].animation, facial_attributes[i].value);
         }
     }
@@ -444,7 +483,8 @@ public:
     virtual void Start()
     {
         Graphics* g = GetSubsystem<Graphics>();
-        printf("graphics-width=%d, height=%d]n", g->GetWidth(), g->GetHeight());
+        gpu_size_t f_size = GetFrameSize();
+        printf("graphics-width=%d,height=%d gpu-width=%d,height=%d\n", g->GetWidth(), g->GetHeight(), f_size.width, f_size.height);
 
         CreateScene();
         CreateUI();
