@@ -367,7 +367,8 @@ struct FacialBoneManager
 
         base_animation = "Animations/rabbit_ear_motion_Take 001.ani";
         AnimationController* ac = face_node->GetComponent<AnimationController>();
-        ac->PlayExclusive(base_animation, kFacial_Animation_Base_Layer, true, 0.01F);
+        ac->PlayExclusive(base_animation, kFacial_Animation_Base_Layer, true, 0.25F);
+        ac->SetSpeed(base_animation, 0.25F);
         
         for (unsigned i=0; i<kFacial_Attribute_Num; ++i)
         {
