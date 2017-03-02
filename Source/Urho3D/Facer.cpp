@@ -364,12 +364,11 @@ struct FacialBoneManager
         facial_attributes[kFacial_EyePositionLeft_Right].value = 0.5F;
         facial_attributes[kFacial_EyePositionRight_Right].value = 0.5F;
 
-
         base_animation = "Animations/rabbit_ear_motion_Take 001.ani";
         AnimationController* ac = face_node->GetComponent<AnimationController>();
         ac->PlayExclusive(base_animation, kFacial_Animation_Base_Layer, true, 0.25F);
         ac->SetSpeed(base_animation, 0.25F);
-        
+
         for (unsigned i=0; i<kFacial_Attribute_Num; ++i)
         {
             if (!facial_attributes[i].animation.Empty())
@@ -391,6 +390,8 @@ struct FacialBoneManager
     void Update(float dt, Text* text)
     {
         vs_models_human_action_t* t = GetFacerAction();
+        String s = "No Face detected";
+
         if (t && t->face_count > 0)
         {
             const vs_models_face_action_t& f = t->faces[0];
@@ -413,11 +414,11 @@ struct FacialBoneManager
 
             s += String("\nb1=" + String(b1) + " b2=" + String(b2));
             s += String("\nb3=" + String(b3)+  " b4=" + String(b4));
-            
+
             const float z_offset = -15.0F;
             Quaternion q(-yaw, roll, pitch + z_offset);
             rotate_bone_node->SetRotation(q);
-            
+
             float w1 = facial_attributes[kFacial_MouseOpenness].value;
             float w2 = facial_attributes[kFacial_EyeCloseness_Left].value;
             const float speed = 5.0F;
@@ -431,7 +432,7 @@ struct FacialBoneManager
             {
                 w2 -= speed * dt;
             }
-            
+
             if (f.face_action & VS_MOUTH_AH)
             {
                 s += "\nMouth_AH";
@@ -441,23 +442,18 @@ struct FacialBoneManager
             {
                 w1 -= speed * dt;
             }
-            
+
             facial_attributes[kFacial_MouseOpenness].value = Clamp(w1, 0.0F, 1.0F);
             facial_attributes[kFacial_EyeCloseness_Left].value = Clamp(w2, 0.0F, 1.0F);
             facial_attributes[kFacial_EyeCloseness_Right].value = facial_attributes[kFacial_EyeCloseness_Left].value;
-            
-            text->SetText(s);
+
+            facial_attributes[kFacial_EyePositionRight_Left].value = 1.0F - facial_attributes[kFacial_EyePositionLeft_Left].value;
+            facial_attributes[kFacial_EyePositionRight_Right].value = 1.0F - facial_attributes[kFacial_EyePositionLeft_Right].value;
         }
-        else
-        {
-            text->SetText("No Face detected");
-        }
+
+        text->SetText(s);
 
         AnimationController* ac = face_node->GetComponent<AnimationController>();
-
-        facial_attributes[kFacial_EyePositionRight_Left].value = 1.0F - facial_attributes[kFacial_EyePositionLeft_Left].value;
-        facial_attributes[kFacial_EyePositionRight_Right].value = 1.0F - facial_attributes[kFacial_EyePositionLeft_Right].value;
-
         for (unsigned i=0; i<kFacial_Attribute_Num; ++i)
         {
             if (!facial_attributes[i].animation.Empty())
@@ -502,10 +498,6 @@ public:
         CreateUI();
         SetupViewport();
         SubscribeToEvents();
-    }
-
-    virtual void Stop()
-    {
     }
 
 private:
@@ -580,5 +572,5 @@ void Urho3D_Init()
 }
 
 #if __cplusplus
-}   // Extern C
+}
 #endif
