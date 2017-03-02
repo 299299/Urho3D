@@ -398,7 +398,7 @@ struct FacialBoneManager
             float yaw = f.face.yaw;
             float pitch = f.face.pitch;
             float roll = f.face.roll;
-            String s = "yaw=" + String(yaw) + "\npitch=" + String(pitch) + "\nroll=" + String(roll);
+            s = "yaw=" + String(yaw) + "\npitch=" + String(pitch) + "\nroll=" + String(roll);
 
             float eye1 = facial_bones[kFacial_EyeBall_Left].GetPositionOnFace(f).x_;
             float eye2 = facial_bones[kFacial_EyeLeft_Left].GetPositionOnFace(f).x_;
