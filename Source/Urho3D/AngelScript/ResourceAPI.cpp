@@ -473,6 +473,8 @@ static void RegisterXMLElement(asIScriptEngine* engine)
     engine->RegisterObjectMethod("XMLElement", "bool SetDouble(const String&in, double)", asMETHOD(XMLElement, SetDouble), asCALL_THISCALL);
     engine->RegisterObjectMethod("XMLElement", "bool SetInt(const String&in, int)", asMETHOD(XMLElement, SetInt), asCALL_THISCALL);
     engine->RegisterObjectMethod("XMLElement", "bool SetUInt(const String&in, uint)", asMETHOD(XMLElement, SetUInt), asCALL_THISCALL);
+    engine->RegisterObjectMethod("XMLElement", "bool SetInt64(const String&in, int64)", asMETHOD(XMLElement, SetInt64), asCALL_THISCALL);
+    engine->RegisterObjectMethod("XMLElement", "bool SetUInt64(const String&in, uint64)", asMETHOD(XMLElement, SetUInt64), asCALL_THISCALL);
     engine->RegisterObjectMethod("XMLElement", "bool SetIntRect(const String&in, const IntRect&in)", asMETHOD(XMLElement, SetIntRect), asCALL_THISCALL);
     engine->RegisterObjectMethod("XMLElement", "bool SetIntVector2(const String&in, const IntVector2&in)", asMETHOD(XMLElement, SetIntVector2), asCALL_THISCALL);
     engine->RegisterObjectMethod("XMLElement", "bool SetIntVector3(const String&in, const IntVector3&in)", asMETHOD(XMLElement, SetIntVector3), asCALL_THISCALL);
@@ -505,6 +507,8 @@ static void RegisterXMLElement(asIScriptEngine* engine)
     engine->RegisterObjectMethod("XMLElement", "double GetDouble(const String&in) const", asMETHOD(XMLElement, GetDouble), asCALL_THISCALL);
     engine->RegisterObjectMethod("XMLElement", "uint GetUInt(const String&in) const", asMETHOD(XMLElement, GetUInt), asCALL_THISCALL);
     engine->RegisterObjectMethod("XMLElement", "int GetInt(const String&in) const", asMETHOD(XMLElement, GetInt), asCALL_THISCALL);
+    engine->RegisterObjectMethod("XMLElement", "uint64 GetUInt64(const String&in) const", asMETHOD(XMLElement, GetUInt64), asCALL_THISCALL);
+    engine->RegisterObjectMethod("XMLElement", "int64 GetInt64(const String&in) const", asMETHOD(XMLElement, GetInt64), asCALL_THISCALL);
     engine->RegisterObjectMethod("XMLElement", "IntRect GetIntRect(const String&in) const", asMETHOD(XMLElement, GetIntRect), asCALL_THISCALL);
     engine->RegisterObjectMethod("XMLElement", "IntVector2 GetIntVector2(const String&in) const", asMETHOD(XMLElement, GetIntVector2), asCALL_THISCALL);
     engine->RegisterObjectMethod("XMLElement", "IntVector3 GetIntVector3(const String&in) const", asMETHOD(XMLElement, GetIntVector3), asCALL_THISCALL);
