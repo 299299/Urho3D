@@ -42,12 +42,20 @@
 
 #include <Foundation/Foundation.h>
 
+extern void GetEngineWindowRect(int* x, int *y, int* w, int* h);
+
 static CGRect GetWindowBounds(UIScreen* screen)
 {
     CGSize screen_size = screen.bounds.size;
-    int hack_w = 256;
     /* !!! FIXME: Golden Hack !!! */
-    return CGRectMake(screen_size.width-hack_w, screen_size.height-hack_w, hack_w, hack_w);
+    int x, y, w, h;
+    GetEngineWindowRect(&x, &y, &w, &h);
+    NSLog(@"GetWindowBounds x=%d, y=%d, w=%d, h=%d", x, y, w, h);
+    if (x < 0)
+        x = screen_size.width+x;
+    if (y < 0)
+        y = screen_size.height+y;
+    return CGRectMake(x, y, w, h);
 }
 
 @implementation SDL_WindowData

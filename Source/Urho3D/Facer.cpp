@@ -31,6 +31,7 @@
 
 const char* rotate_bone_name = "rabbit2:Bip01_Head";
 const char* head_bone_name = "rabbit2:Bip01_Head";
+static int s_x = -128, s_y = -128, s_w = 128, s_h = 128;
 
 #if __cplusplus
 extern "C" {
@@ -367,7 +368,7 @@ struct FacialBoneManager
         base_animation = "Animations/rabbit_ear_motion_Take 001.ani";
         AnimationController* ac = face_node->GetComponent<AnimationController>();
         ac->PlayExclusive(base_animation, kFacial_Animation_Base_Layer, true, 0.25F);
-        ac->SetSpeed(base_animation, 0.25F);
+        ac->SetSpeed(base_animation, 0.5F);
 
         for (unsigned i=0; i<kFacial_Attribute_Num; ++i)
         {
@@ -398,7 +399,8 @@ struct FacialBoneManager
             float yaw = f.face.yaw;
             float pitch = f.face.pitch;
             float roll = f.face.roll;
-            s = "yaw=" + String(yaw) + "\npitch=" + String(pitch) + "\nroll=" + String(roll);
+            s = "";
+            //s = "yaw=" + String(yaw) + "\npitch=" + String(pitch) + "\nroll=" + String(roll);
 
             float eye1 = facial_bones[kFacial_EyeBall_Left].GetPositionOnFace(f).x_;
             float eye2 = facial_bones[kFacial_EyeLeft_Left].GetPositionOnFace(f).x_;
@@ -412,8 +414,8 @@ struct FacialBoneManager
             float b3 = fabs(eye1 - eye3);
             float b4 = fabs(eye1 - eye2);
 
-            s += String("\nb1=" + String(b1) + " b2=" + String(b2));
-            s += String("\nb3=" + String(b3)+  " b4=" + String(b4));
+            //s += String("\nb1=" + String(b1) + " b2=" + String(b2));
+            //s += String("\nb3=" + String(b3)+  " b4=" + String(b4));
 
             const float z_offset = -15.0F;
             Quaternion q(-yaw, roll, pitch + z_offset);
@@ -483,7 +485,38 @@ public:
                 String commandLine = commandFile->ReadLine();
                 commandFile->Close();
                 ParseArguments(commandLine, false);
-                engineParameters_ = Engine::ParseParameters(GetArguments());
+                Vector<String> arguments = GetArguments();
+                engineParameters_ = Engine::ParseParameters(arguments);
+                
+                for (unsigned i = 0; i < arguments.Size(); ++i)
+                {
+                    if (arguments[i].Length() > 1 && arguments[i][0] == '-')
+                    {
+                        String argument = arguments[i].Substring(1).ToLower();
+                        String value = i + 1 < arguments.Size() ? arguments[i + 1] : String::EMPTY;
+                        
+                        if (argument == "x" && !value.Empty())
+                        {
+                            s_x = ToInt(value);
+                            ++i;
+                        }
+                        else if (argument == "y" && !value.Empty())
+                        {
+                            s_y = ToInt(value);
+                            ++i;
+                        }
+                        else if (argument == "w" && !value.Empty())
+                        {
+                            s_w = ToInt(value);
+                            ++i;
+                        }
+                        else if (argument == "h" && !value.Empty())
+                        {
+                            s_h = ToInt(value);
+                            ++i;
+                        }
+                    }
+                }
             }
         }
     }
@@ -518,7 +551,7 @@ private:
     {
         ResourceCache* cache = GetSubsystem<ResourceCache>();
         debugText_ = new Text(context_);
-        debugText_->SetFont(cache->GetResource<Font>("Fonts/Anonymous Pro.ttf"), 10);
+        debugText_->SetFont(cache->GetResource<Font>("Fonts/Anonymous Pro.ttf"), 20);
         debugText_->SetColor(Color(0.0f, 1.0f, 0.0f));
         debugText_->SetHorizontalAlignment(HA_LEFT);
         debugText_->SetVerticalAlignment(VA_TOP);
@@ -556,7 +589,15 @@ private:
 #if __cplusplus
 extern "C" {
 #endif
-
+    
+void GetEngineWindowRect(int* x, int *y, int* w, int* h)
+{
+    *x = s_x;
+    *y = s_y;
+    *w = s_w;
+    *h = s_h;
+}
+    
 int SDL_main(int argc, char** argv)
 {
     SDL_SetMainReady();

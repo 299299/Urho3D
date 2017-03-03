@@ -182,6 +182,10 @@ UIKit_GL_CreateContext(_THIS, SDL_Window * window)
             SDL_SetError("OpenGL ES %d context could not be created", _this->gl_config.major_version);
             return NULL;
         }
+        
+        CGRect r = data.uiwindow.bounds;
+        CGRect r1 = data.uiwindow.screen.bounds;
+        scale = (float)r1.size.width / (float)r.size.width;
 
         /* construct our view, passing in SDL's OpenGL configuration data */
         view = [[SDL_uikitopenglview alloc] initWithFrame:frame
