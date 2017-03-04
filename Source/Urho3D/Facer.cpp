@@ -519,6 +519,8 @@ public:
                 }
             }
         }
+        
+        engineParameters_[EP_ORIENTATIONS] = "LandscapeLeft LandscapeRight Portrait PortraitUpsideDown";
     }
 
     virtual void Start()
