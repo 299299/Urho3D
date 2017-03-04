@@ -42,6 +42,9 @@
 
 #include <Foundation/Foundation.h>
 
+#define GOLDEN_HACK
+
+#ifdef GOLDEN_HACK
 extern void GetEngineWindowRect(int* x, int *y, int* w, int* h);
 
 static CGRect GetWindowBounds(UIScreen* screen)
@@ -57,6 +60,7 @@ static CGRect GetWindowBounds(UIScreen* screen)
         y = screen_size.height+y;
     return CGRectMake(x, y, w, h);
 }
+#endif
 
 @implementation SDL_WindowData
 
@@ -86,8 +90,11 @@ static CGRect GetWindowBounds(UIScreen* screen)
 - (void)layoutSubviews
 {
     /* Workaround to fix window orientation issues in iOS 8+. */
-    //self.frame = self.screen.bounds;
+#ifdef GOLDEN_HACK
     self.frame = GetWindowBounds(self.screen);
+#else
+    self.frame = self.screen.bounds;
+#endif
     [super layoutSubviews];
 }
 
@@ -219,8 +226,12 @@ UIKit_CreateWindow(_THIS, SDL_Window *window)
         
         /* ignore the size user requested, and make a fullscreen window */
         /* !!! FIXME: can we have a smaller view? */
+#ifdef GOLDEN_HACK
         UIWindow *uiwindow = [[SDL_uikitwindow alloc] initWithFrame:GetWindowBounds(data.uiscreen)];
-
+#else
+        UIWindow *uiwindow = [[SDL_uikitwindow alloc] initWithFrame:data.uiscreen.bounds];
+#endif
+    
         /* put the window on an external display if appropriate. */
         if (data.uiscreen != [UIScreen mainScreen]) {
             [uiwindow setScreen:data.uiscreen];
