@@ -30,7 +30,7 @@
 
 namespace Urho3D
 {
-
+    
 /// Operating system mutual exclusion primitive.
 class URHO3D_API Mutex
 {

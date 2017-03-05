@@ -54,11 +54,18 @@ static CGRect GetWindowBounds(UIScreen* screen)
     int x, y, w, h;
     GetEngineWindowRect(&x, &y, &w, &h);
     NSLog(@"GetWindowBounds x=%d, y=%d, w=%d, h=%d", x, y, w, h);
-    if (x < 0)
-        x = screen_size.width+x;
-    if (y < 0)
-        y = screen_size.height+y;
-    return CGRectMake(x, y, w, h);
+    if (w <= 0 || h <= 0)
+    {
+        return screen.bounds;
+    }
+    else
+    {
+        if (x < 0)
+            x = screen_size.width+x;
+        if (y < 0)
+            y = screen_size.height+y;
+        return CGRectMake(x, y, w, h);
+    }
 }
 #endif
 

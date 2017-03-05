@@ -26,12 +26,16 @@
 #include "Scene/SceneEvents.h"
 #include "Core/CoreEvents.h"
 #include "Math/MathDefs.h"
+#include "Core/Mutex.h"
+#include "Graphics/GraphicsEvents.h"
+#include "Graphics/RenderSurface.h"
 #include <SDL/SDL.h>
 #include <stdio.h>
 
 const char* rotate_bone_name = "rabbit2:Bip01_Head";
 const char* head_bone_name = "rabbit2:Bip01_Head";
 static int s_x = -128, s_y = -128, s_w = 128, s_h = 128;
+static char* s_screen_data = NULL;
 
 #if __cplusplus
 extern "C" {
@@ -225,7 +229,7 @@ struct FacialBone
 
     void LoadNode(Node* node)
     {
-        if (!bone_name)
+        if (bone_name)
         {
             bone_node = node->GetChild(bone_name, true);
         }
@@ -471,7 +475,7 @@ class FacePlayer : public Application
 {
     URHO3D_OBJECT(FacePlayer, Application);
 public:
-    FacePlayer(Context* context):Application(context){};
+    FacePlayer(Context* context):Application(context),renderToTexture_(false){};
 
     virtual void Setup()
     {
@@ -515,12 +519,21 @@ public:
                             s_h = ToInt(value);
                             ++i;
                         }
+                        else if (argument == "render_to_texture")
+                        {
+                            renderToTexture_ = true;
+                        }
                     }
                 }
             }
         }
         
         engineParameters_[EP_ORIENTATIONS] = "LandscapeLeft LandscapeRight Portrait PortraitUpsideDown";
+        
+        if (renderToTexture_)
+        {
+            // s_w = 0; s_h = 0; s_x = 0; s_y = 0;
+        }
     }
 
     virtual void Start()
@@ -535,6 +548,18 @@ public:
         SubscribeToEvents();
     }
 
+    void GetRenderTexture(int* out_w, int* out_h, void* data)
+    {
+        if (!renderToTexture_)
+            return;
+        
+        MutexLock _l(lock_);
+        *out_w = renderTexture_->GetWidth();
+        *out_h = renderTexture_->GetHeight();
+        if (data)
+            renderTexture_->GetData(0, data);
+    }
+    
 private:
     void CreateScene()
     {
@@ -542,11 +567,11 @@ private:
         scene_ = new Scene(context_);
         SharedPtr<File> file = cache->GetFile("Scenes/Head.xml");
         scene_->LoadXML(*file);
+        mgr_.Init(scene_);
+            
         cameraNode_ = scene_->CreateChild("Camera");
         cameraNode_->CreateComponent<Camera>();
         cameraNode_->SetPosition(Vector3(0.0f, 0.55f, -1.5f));
-        mgr_.Init(scene_);
-        //cameraNode_->LookAt(mgr_.face_node->GetChild(head_bone_name, true)->GetWorldPosition());
     }
 
     void CreateUI()
@@ -566,11 +591,22 @@ private:
         Renderer* renderer = GetSubsystem<Renderer>();
         SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
         renderer->SetViewport(0, viewport);
+        
+        if (renderToTexture_)
+        {
+            Graphics* g = GetSubsystem<Graphics>();
+            renderTexture_ = new Texture2D(context_);
+            renderTexture_->SetSize(g->GetWidth(), g->GetHeight(), Graphics::GetRGBFormat(), TEXTURE_RENDERTARGET);
+            renderTexture_->SetFilterMode(FILTER_BILINEAR);
+            renderTexture_->GetRenderSurface()->SetViewport(0, viewport);
+        }
     }
 
     void SubscribeToEvents()
     {
         SubscribeToEvent(E_UPDATE, URHO3D_HANDLER(FacePlayer, HandleUpdate));
+        if (renderToTexture_)
+            SubscribeToEvent(E_ENDRENDERING, URHO3D_HANDLER(FacePlayer, HanldeEndRendering));
     }
 
     void HandleUpdate(StringHash eventType, VariantMap& eventData)
@@ -579,18 +615,33 @@ private:
         float timeStep = eventData[P_TIMESTEP].GetFloat();
         mgr_.Update(timeStep, debugText_);
     }
-
+    
+    void HanldeEndRendering(StringHash eventType, VariantMap& eventData)
+    {
+        MutexLock _l(lock_);
+        Graphics* g = GetSubsystem<Graphics>();
+        if (renderTexture_->GetWidth() != g->GetWidth() || renderTexture_->GetHeight() != g->GetHeight())
+        {
+            renderTexture_->SetSize(g->GetWidth(), g->GetHeight(), Graphics::GetRGBFormat(), TEXTURE_RENDERTARGET);
+        }
+    }
+    
 private:
     SharedPtr<Scene> scene_;
     SharedPtr<Node> cameraNode_;
     SharedPtr<Text> debugText_;
+    SharedPtr<Texture2D> renderTexture_;
     FacialBoneManager mgr_;
+    Mutex lock_;
+    bool renderToTexture_;
 };
 }
 
 #if __cplusplus
 extern "C" {
 #endif
+
+static Urho3D::FacePlayer* g_app = NULL;
     
 void GetEngineWindowRect(int* x, int *y, int* w, int* h)
 {
@@ -604,14 +655,19 @@ int SDL_main(int argc, char** argv)
 {
     SDL_SetMainReady();
     Urho3D::Context* context = new Urho3D::Context();
-    Urho3D::FacePlayer* application = new Urho3D::FacePlayer(context);
-    return application->Run();
+    g_app = new Urho3D::FacePlayer(context);
+    return g_app->Run();
 }
 
 void Urho3D_Init()
 {
     printf("Urho3D_Init\n");
     SDL_main(0, 0);
+}
+    
+void Urho3D_GetRenderTexture(int* out_w, int* out_h, void* data)
+{
+    g_app->GetRenderTexture(out_w, out_h, data);
 }
 
 #if __cplusplus
