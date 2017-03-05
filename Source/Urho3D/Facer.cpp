@@ -29,13 +29,13 @@
 #include "Core/Mutex.h"
 #include "Graphics/GraphicsEvents.h"
 #include "Graphics/RenderSurface.h"
+#include "Graphics/Technique.h"
 #include <SDL/SDL.h>
 #include <stdio.h>
 
 const char* rotate_bone_name = "rabbit2:Bip01_Head";
 const char* head_bone_name = "rabbit2:Bip01_Head";
 static int s_x = -128, s_y = -128, s_w = 128, s_h = 128;
-static char* s_screen_data = NULL;
 
 #if __cplusplus
 extern "C" {
@@ -591,14 +591,28 @@ private:
         Renderer* renderer = GetSubsystem<Renderer>();
         SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
         renderer->SetViewport(0, viewport);
+        ResourceCache* cache = GetSubsystem<ResourceCache>();
         
         if (renderToTexture_)
         {
             Graphics* g = GetSubsystem<Graphics>();
             renderTexture_ = new Texture2D(context_);
-            renderTexture_->SetSize(g->GetWidth(), g->GetHeight(), Graphics::GetRGBFormat(), TEXTURE_RENDERTARGET);
+            renderTexture_->SetSize(g->GetWidth(), g->GetHeight(), Graphics::GetRGBAFormat(), TEXTURE_RENDERTARGET);
             renderTexture_->SetFilterMode(FILTER_BILINEAR);
             renderTexture_->GetRenderSurface()->SetViewport(0, viewport);
+            
+            SharedPtr<Material> renderMaterial(new Material(context_));
+            renderMaterial->SetTechnique(0, cache->GetResource<Technique>("Techniques/DiffUnlit.xml"));
+            renderMaterial->SetTexture(TU_DIFFUSE, renderTexture_);
+            renderMaterial->SetDepthBias(BiasParameters(-0.001f, 0.0f));
+            
+            Node* screenNode = scene_->CreateChild("Screen");
+            screenNode->SetPosition(Vector3(0.0f, 10.0f, -0.27f));
+            screenNode->SetRotation(Quaternion(-90.0f, 0.0f, 0.0f));
+            screenNode->SetScale(Vector3(20.0f, 0.0f, 15.0f));
+            StaticModel* screenObject = screenNode->CreateComponent<StaticModel>();
+            screenObject->SetModel(cache->GetResource<Model>("Models/Plane.mdl"));
+            screenObject->SetMaterial(renderMaterial);
         }
     }
 
@@ -622,7 +636,7 @@ private:
         Graphics* g = GetSubsystem<Graphics>();
         if (renderTexture_->GetWidth() != g->GetWidth() || renderTexture_->GetHeight() != g->GetHeight())
         {
-            renderTexture_->SetSize(g->GetWidth(), g->GetHeight(), Graphics::GetRGBFormat(), TEXTURE_RENDERTARGET);
+            renderTexture_->SetSize(g->GetWidth(), g->GetHeight(), Graphics::GetRGBAFormat(), TEXTURE_RENDERTARGET);
         }
     }
     
