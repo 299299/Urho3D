@@ -560,6 +560,14 @@ public:
             renderTexture_->GetData(0, data);
     }
 
+    unsigned GetRenderTextureId()
+    {
+        if (!renderToTexture_)
+            return 0;
+
+        return renderTexture_->GetGPUObjectName();
+    }
+
 private:
     void CreateScene()
     {
@@ -688,6 +696,11 @@ void Urho3D_Init()
 void Urho3D_GetRenderTexture(int* out_w, int* out_h, void* data)
 {
     g_app->GetRenderTexture(out_w, out_h, data);
+}
+
+unsigned Urho3D_GetRenderTextureId()
+{
+    return g_app->GetRenderTextureId();
 }
 
 #if __cplusplus
