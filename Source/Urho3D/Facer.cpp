@@ -610,7 +610,7 @@ private:
             Graphics* g = GetSubsystem<Graphics>();
             renderTexture_ = new Texture2D(context_);
             SharedPtr<Viewport> rttViewPort(new Viewport(context_, scene_, rttCameraNode_->GetComponent<Camera>()));
-            renderTexture_->SetSize(g->GetWidth(), g->GetHeight(), Graphics::GetRGBAFormat(), TEXTURE_RENDERTARGET);
+            renderTexture_->SetSize(g->GetWidth(), g->GetHeight(), Graphics::GetRGBFormat(), TEXTURE_RENDERTARGET);
             renderTexture_->SetFilterMode(FILTER_BILINEAR);
             renderTexture_->GetRenderSurface()->SetViewport(0, rttViewPort);
 
@@ -649,7 +649,7 @@ private:
         Graphics* g = GetSubsystem<Graphics>();
         if (renderTexture_->GetWidth() != g->GetWidth() || renderTexture_->GetHeight() != g->GetHeight())
         {
-            renderTexture_->SetSize(g->GetWidth(), g->GetHeight(), Graphics::GetRGBAFormat(), TEXTURE_RENDERTARGET);
+            renderTexture_->SetSize(g->GetWidth(), g->GetHeight(), Graphics::GetRGBFormat(), TEXTURE_RENDERTARGET);
         }
     }
 
