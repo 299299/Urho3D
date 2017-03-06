@@ -491,14 +491,14 @@ public:
                 ParseArguments(commandLine, false);
                 Vector<String> arguments = GetArguments();
                 engineParameters_ = Engine::ParseParameters(arguments);
-                
+
                 for (unsigned i = 0; i < arguments.Size(); ++i)
                 {
                     if (arguments[i].Length() > 1 && arguments[i][0] == '-')
                     {
                         String argument = arguments[i].Substring(1).ToLower();
                         String value = i + 1 < arguments.Size() ? arguments[i + 1] : String::EMPTY;
-                        
+
                         if (argument == "x" && !value.Empty())
                         {
                             s_x = ToInt(value);
@@ -527,9 +527,9 @@ public:
                 }
             }
         }
-        
+
         engineParameters_[EP_ORIENTATIONS] = "LandscapeLeft LandscapeRight Portrait PortraitUpsideDown";
-        
+
         if (renderToTexture_)
         {
             // s_w = 0; s_h = 0; s_x = 0; s_y = 0;
@@ -552,14 +552,14 @@ public:
     {
         if (!renderToTexture_)
             return;
-        
+
         MutexLock _l(lock_);
         *out_w = renderTexture_->GetWidth();
         *out_h = renderTexture_->GetHeight();
         if (data)
             renderTexture_->GetData(0, data);
     }
-    
+
 private:
     void CreateScene()
     {
@@ -568,10 +568,14 @@ private:
         SharedPtr<File> file = cache->GetFile("Scenes/Head.xml");
         scene_->LoadXML(*file);
         mgr_.Init(scene_);
-            
+
         cameraNode_ = scene_->CreateChild("Camera");
         cameraNode_->CreateComponent<Camera>();
         cameraNode_->SetPosition(Vector3(0.0f, 0.55f, -1.5f));
+
+        rttCameraNode_ = scene_->CreateChild("RttCamera");
+        rttCameraNode_->CreateComponent<Camera>();
+        rttCameraNode_->SetPosition(cameraNode_->GetPosition());
     }
 
     void CreateUI()
@@ -592,20 +596,21 @@ private:
         SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
         renderer->SetViewport(0, viewport);
         ResourceCache* cache = GetSubsystem<ResourceCache>();
-        
+
         if (renderToTexture_)
         {
             Graphics* g = GetSubsystem<Graphics>();
             renderTexture_ = new Texture2D(context_);
+            SharedPtr<Viewport> rttViewPort(new Viewport(context_, scene_, rttCameraNode_->GetComponent<Camera>()));
             renderTexture_->SetSize(g->GetWidth(), g->GetHeight(), Graphics::GetRGBAFormat(), TEXTURE_RENDERTARGET);
             renderTexture_->SetFilterMode(FILTER_BILINEAR);
-            renderTexture_->GetRenderSurface()->SetViewport(0, viewport);
-            
+            renderTexture_->GetRenderSurface()->SetViewport(0, rttViewPort);
+
             SharedPtr<Material> renderMaterial(new Material(context_));
             renderMaterial->SetTechnique(0, cache->GetResource<Technique>("Techniques/DiffUnlit.xml"));
             renderMaterial->SetTexture(TU_DIFFUSE, renderTexture_);
             renderMaterial->SetDepthBias(BiasParameters(-0.001f, 0.0f));
-            
+
             Node* screenNode = scene_->CreateChild("Screen");
             screenNode->SetPosition(Vector3(0.0f, 10.0f, -0.27f));
             screenNode->SetRotation(Quaternion(-90.0f, 0.0f, 0.0f));
@@ -629,7 +634,7 @@ private:
         float timeStep = eventData[P_TIMESTEP].GetFloat();
         mgr_.Update(timeStep, debugText_);
     }
-    
+
     void HanldeEndRendering(StringHash eventType, VariantMap& eventData)
     {
         MutexLock _l(lock_);
@@ -639,11 +644,12 @@ private:
             renderTexture_->SetSize(g->GetWidth(), g->GetHeight(), Graphics::GetRGBAFormat(), TEXTURE_RENDERTARGET);
         }
     }
-    
+
 private:
     SharedPtr<Scene> scene_;
     SharedPtr<Node> cameraNode_;
     SharedPtr<Text> debugText_;
+    SharedPtr<Node> rttCameraNode_;
     SharedPtr<Texture2D> renderTexture_;
     FacialBoneManager mgr_;
     Mutex lock_;
@@ -656,7 +662,7 @@ extern "C" {
 #endif
 
 static Urho3D::FacePlayer* g_app = NULL;
-    
+
 void GetEngineWindowRect(int* x, int *y, int* w, int* h)
 {
     *x = s_x;
@@ -664,7 +670,7 @@ void GetEngineWindowRect(int* x, int *y, int* w, int* h)
     *w = s_w;
     *h = s_h;
 }
-    
+
 int SDL_main(int argc, char** argv)
 {
     SDL_SetMainReady();
@@ -678,7 +684,7 @@ void Urho3D_Init()
     printf("Urho3D_Init\n");
     SDL_main(0, 0);
 }
-    
+
 void Urho3D_GetRenderTexture(int* out_w, int* out_h, void* data)
 {
     g_app->GetRenderTexture(out_w, out_h, data);
