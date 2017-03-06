@@ -20,26 +20,24 @@
 // THE SOFTWARE.
 //
 
-#include "../Precompiled.h"
+#pragma once
 
-#include "../Math/MathDefs.h"
-
-#include "../DebugNew.h"
+#include "../IO/Serializer.h"
+#include "../IO/Deserializer.h"
 
 namespace Urho3D
 {
 
-void SinCos(float angle, float& sin, float& cos)
+/// A common root class for objects that implement both Serializer and Deserializer.
+class URHO3D_API AbstractFile : public Deserializer, public Serializer
 {
-    float angleRadians = angle * M_DEGTORAD;
-#if defined(HAVE_SINCOSF)
-    sincosf(angleRadians, &sin, &cos);
-#elif defined(HAVE___SINCOSF)
-    __sincosf(angleRadians, &sin, &cos);
-#else
-    sin = sinf(angleRadians);
-    cos = cosf(angleRadians);
-#endif
-}
+public:
+    /// Construct.
+    AbstractFile() : Deserializer() { }
+    /// Construct.
+    AbstractFile(unsigned int size) : Deserializer(size) { }
+    /// Destruct.
+    virtual ~AbstractFile() { }
+};
 
-}
+};

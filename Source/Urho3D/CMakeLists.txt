@@ -40,27 +40,56 @@ if (URHO3D_CLANG_TOOLS OR URHO3D_BINDINGS)
     endif ()
 endif ()
 
-# Check sincosf support
-if (NOT MSVC)   # There is no chance MSVC would pass this one as it does not have libm
-    include (CheckLibraryExists)
-    check_library_exists (m sincosf "" HAVE_SINCOSF)
+# Save keep the preprocessor macros (for using the Urho3D library) for later use in generating Urho3D.pc file
+get_directory_property (URHO3D_COMPILE_DEFINITIONS DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} COMPILE_DEFINITIONS)
+
+# Define preprocessor macros (for building the Urho3D library)
+add_definitions (-DURHO3D_IS_BUILDING)
+if (ANDROID AND DEFINED ENV{ASSET_DIR_INDICATOR})
+    add_definitions (-DASSET_DIR_INDICATOR=\"$ENV{ASSET_DIR_INDICATOR}\")
+endif ()
+if ($ENV{COVERITY_SCAN_BRANCH})
+    # This macro is used when scanning Urho3D library via Coverity-Scan
+    # TODO: The Coverity-Scan modelling is not yet working properly (anyone interested in static analyzer is welcome to give it another try)
+    add_definitions (-DCOVERITY_SCAN_MODEL)
+endif ()
+if (TARGET GLEW)
+    # These macros are required because Urho3D (OpenGL) headers are exposed to GLEW headers
+    add_definitions (-DGLEW_STATIC -DGLEW_NO_GLU)
 endif ()
 if (HAVE_SINCOSF)
     add_definitions (-DHAVE_SINCOSF)
-else ()
-    include (CheckFunctionExists)
-    check_function_exists (__sincosf HAVE_UNDERSCORE_SINCOSF)
-    if (HAVE_UNDERSCORE_SINCOSF)
-        add_definitions (-DHAVE_UNDERSCORE_SINCOSF)
+elseif (HAVE___SINCOSF)
+    add_definitions (-DHAVE___SINCOSF)
+endif ()
+# Enable/disable SIMD instruction set for STB image
+if (NEON)
+    if (XCODE)
+        if (IOS)
+            set (SDK iphoneos)
+        elseif (TVOS)
+            set (SDK appletvos)
+        endif ()
+        list (APPEND TARGET_PROPERTIES XCODE_ATTRIBUTE_OTHER_CFLAGS[sdk=${SDK}*] "-DSTBI_NEON $(OTHER_CFLAGS)")
+        list (APPEND TARGET_PROPERTIES XCODE_ATTRIBUTE_OTHER_CPLUSPLUSFLAGS[sdk=${SDK}*] "-DSTBI_NEON $(OTHER_CPLUSPLUSFLAGS)")
+    else ()
+        add_definitions (-DSTBI_NEON)
+    endif ()
+elseif (MSVC AND NOT URHO3D_SSE)
+    add_definitions (-DSTBI_NO_SIMD)
+elseif (MINGW AND NOT URHO3D_64BIT AND URHO3D_SSE)
+    add_definitions (-DSTBI_MINGW_ENABLE_SSE2)
+endif ()
+if (URHO3D_LUA)
+    if (NOT URHO3D_SAFE_LUA)
+        add_definitions (-DTOLUA_RELEASE)
+    endif ()
+    if (URHO3D_LUA_RAW_SCRIPT_LOADER)
+        add_definitions (-DURHO3D_LUA_RAW_SCRIPT_LOADER)
     endif ()
 endif ()
-
-add_definitions (-DURHO3D_IS_BUILDING)
 if (ODBC_VERSION AND NOT ODBC_VERSION VERSION_LESS 3)
     add_definitions (-DODBC_3_OR_LATER)
-endif ()
-if (ANDROID AND DEFINED ENV{ASSET_DIR_INDICATOR})
-    add_definitions (-DASSET_DIR_INDICATOR=\"$ENV{ASSET_DIR_INDICATOR}\")
 endif ()
 
 if (WIN32)
@@ -120,22 +149,12 @@ if (TARGET LuaJIT_universal)
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
     list (APPEND SYMBOLIC_SOURCES ${LuaJIT_universal_symbolic})
 endif ()
+set_source_files_properties (${SYMBOLIC_SOURCES} PROPERTIES SYMBOLIC TRUE)
 add_custom_command (OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/librevision.h
     COMMAND ${CMAKE_COMMAND} -DFILENAME=${CMAKE_CURRENT_BINARY_DIR}/librevision.h -P CMake/Modules/GetUrho3DRevision.cmake
     DEPENDS ${URHO3D_DEPS} ${CMAKE_SOURCE_DIR}/CMake/Modules/GetUrho3DRevision.cmake
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     COMMENT "Generating GIT revision number (tag + last commit SHA-1)")
-if (EMSCRIPTEN)
-    # Emscripten will attempt to generate system libraries in LLVM bitcode (libcxxabi, gl, libc, and dlmalloc) when linking for the very first time
-    # However, currently it does so without any locking resulting in potentially multiple same generation with build system that supports concurrent build processes such as ours
-    # Workaround that by calling Emscripten builder to generate all the required system libraries (in case it is the very first time) ahead of time in an orderly fashion
-    set (EMBUILDER_SYSTEM_LIBS_symbolic EMBUILDER_SYSTEM_LIBS_symbolic)
-    list (APPEND EMSCRIPTEN_SYSTEM_LIBS dlmalloc libc libcxxabi gl)
-    add_custom_command (OUTPUT ${EMBUILDER_SYSTEM_LIBS_symbolic}
-        COMMAND ${EMBUILDER} build ${EMSCRIPTEN_SYSTEM_LIBS})
-    list (APPEND SYMBOLIC_SOURCES ${EMBUILDER_SYSTEM_LIBS_symbolic})
-endif ()
-set_source_files_properties (${SYMBOLIC_SOURCES} PROPERTIES SYMBOLIC TRUE)
 
 # Use the AutoBinder tool to generate source files for binding script subsystems
 if (URHO3D_BINDINGS)
@@ -143,11 +162,14 @@ if (URHO3D_BINDINGS)
     include (ExternalProject)
     if (IOS)
         # For iOS target, ensure the host environment is cleared first; Also workaround a known CMake/Xcode generator bug which prevents it from installing binaries correctly
-        set (IOS_FIX CMAKE_COMMAND /usr/bin/env -i PATH=$ENV{PATH} ${CMAKE_COMMAND} BUILD_COMMAND bash -c "sed -i '' 's/EFFECTIVE_PLATFORM_NAME//g' CMakeScripts/install_postBuildPhase.make*")
+        set (ALTERNATE_COMMAND CMAKE_COMMAND /usr/bin/env -i PATH=$ENV{PATH} CC=${SAVED_CC} CXX=${SAVED_CXX} CI=$ENV{CI} ${CMAKE_COMMAND} BUILD_COMMAND bash -c "sed -i '' 's/EFFECTIVE_PLATFORM_NAME//g' CMakeScripts/install_postBuildPhase.make*")
+    else ()
+        set (ALTERNATE_COMMAND CMAKE_COMMAND ${CMAKE_COMMAND} -E env CC=${SAVED_CC} CXX=${SAVED_CXX} CI=$ENV{CI} ${CMAKE_COMMAND})
     endif ()
     ExternalProject_Add (AutoBinder
-            SOURCE_DIR ${CMAKE_SOURCE_DIR}/Source/Clang-Tools
-            CMAKE_ARGS -DURHO3D_CLANG_TOOLS=AutoBinder -DDEST_RUNTIME_DIR=${CMAKE_BINARY_DIR}/bin/tool/clang -DDEST_INCLUDE_DIR=${DEST_INCLUDE_DIR} -DBAKED_CMAKE_SOURCE_DIR=${CMAKE_SOURCE_DIR} ${IOS_FIX})
+        SOURCE_DIR ${CMAKE_SOURCE_DIR}/Source/Clang-Tools
+        CMAKE_ARGS -DURHO3D_CLANG_TOOLS=AutoBinder -DDEST_RUNTIME_DIR=${CMAKE_BINARY_DIR}/bin/tool/clang -DDEST_INCLUDE_DIR=${DEST_INCLUDE_DIR} -DBAKED_CMAKE_SOURCE_DIR=${CMAKE_SOURCE_DIR}
+        ${ALTERNATE_COMMAND})
     file (MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated/generated)
     foreach (SCRIPT AngelScript LuaScript JavaScript)
         string (TOUPPER URHO3D_${SCRIPT} OPT)
@@ -167,14 +189,18 @@ endif ()
 if (URHO3D_LUA)
     # The host tool must be built natively
     if (CMAKE_CROSSCOMPILING OR URHO3D_LUAJIT)
+        check_native_compiler_exist ()
         # When cross-compiling or using LuaJIT, build the tolua++ host tool as external project using normal Lua (there is not much point using LuaJIT for the tool building even when technically it can)
         include (ExternalProject)
         if (IOS)
-            set (IOS_FIX CMAKE_COMMAND /usr/bin/env -i PATH=$ENV{PATH} ${CMAKE_COMMAND} BUILD_COMMAND bash -c "sed -i '' 's/EFFECTIVE_PLATFORM_NAME//g' CMakeScripts/install_postBuildPhase.make*")
+            set (ALTERNATE_COMMAND CMAKE_COMMAND /usr/bin/env -i PATH=$ENV{PATH} CC=${SAVED_CC} CXX=${SAVED_CXX} CI=$ENV{CI} ${CMAKE_COMMAND} BUILD_COMMAND bash -c "sed -i '' 's/EFFECTIVE_PLATFORM_NAME//g' CMakeScripts/install_postBuildPhase.make*")
+        else ()
+            set (ALTERNATE_COMMAND CMAKE_COMMAND ${CMAKE_COMMAND} -E env CC=${SAVED_CC} CXX=${SAVED_CXX} CI=$ENV{CI} ${CMAKE_COMMAND})
         endif ()
         ExternalProject_Add (tolua++
             SOURCE_DIR ${CMAKE_SOURCE_DIR}/Source/ThirdParty/toluapp/src/bin
-            CMAKE_ARGS -DDEST_RUNTIME_DIR=${CMAKE_BINARY_DIR}/bin/tool -DBAKED_CMAKE_SOURCE_DIR=${CMAKE_SOURCE_DIR} -DURHO3D_UPDATE_SOURCE_TREE=${URHO3D_UPDATE_SOURCE_TREE} ${IOS_FIX})
+            CMAKE_ARGS -DDEST_RUNTIME_DIR=${CMAKE_BINARY_DIR}/bin/tool -DBAKED_CMAKE_SOURCE_DIR=${CMAKE_SOURCE_DIR} -DURHO3D_UPDATE_SOURCE_TREE=${URHO3D_UPDATE_SOURCE_TREE}
+            ${ALTERNATE_COMMAND})
     else ()
         # Otherwise, build it internally as per normal
         add_subdirectory (../ThirdParty/toluapp/src/bin ../ThirdParty/toluapp/src/bin)
@@ -275,7 +301,7 @@ endif ()
 
 # Setup library output path
 if (ANDROID)
-    set (OUTPUT_PATH ${ANDROID_LIBRARY_OUTPUT_PATH})
+    set (OUTPUT_PATH ${CMAKE_BINARY_DIR}/libs/${ANDROID_NDK_ABI_NAME})
 else ()
     set (OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 endif ()
@@ -349,7 +375,7 @@ if (NOT XCODE AND NOT MSVC)
     if (NOT APPLE)
         set_property (TARGET ${TARGET_NAME} APPEND PROPERTY LINK_LIBRARIES -Wl,--no-whole-archive)
     endif ()
-    if (NOT URHO3D_LIB_TYPE STREQUAL SHARED)
+    if (URHO3D_LIB_TYPE STREQUAL STATIC)
         if (APPLE)
             # Apple libtool takes archives directly as input
             add_custom_command (TARGET ${TARGET_NAME} POST_BUILD
@@ -407,25 +433,9 @@ if (NOT XCODE AND NOT MSVC)
         endif ()
     endif ()
 endif ()
-# todo This is a deprecated property in CMake version 2.8.12 - Remove below commands when CMake minimum version is 2.8.12
-if (CMAKE_VERSION VERSION_LESS 2.8.12)
-    set_target_properties (${TARGET_NAME} PROPERTIES LINK_INTERFACE_LIBRARIES "")
-    if (URHO3D_LIB_TYPE STREQUAL SHARED)
-        if (NOT MSVC AND CMAKE_VERSION VERSION_LESS 2.8.11)
-            get_target_property (LINK_LIBRARIES ${TARGET_NAME} LINK_LIBRARIES)
-            target_link_libraries (${TARGET_NAME} LINK_PRIVATE ${LINK_LIBRARIES})
-        endif ()
-    else ()
-        set_target_properties (${TARGET_NAME} PROPERTIES LINK_LIBRARIES "")
-    endif ()
-endif ()
-# end todo
 # Use PIC on platforms that support it (shared library type has this property set to true by default, so we only have to deal with those static ones that the shared library links against)
 if (URHO3D_LIB_TYPE STREQUAL SHARED)
     set_target_properties (${STATIC_LIBRARY_TARGETS} PROPERTIES POSITION_INDEPENDENT_CODE true)
-    if (NOT MSVC AND NOT (MINGW AND CMAKE_CROSSCOMPILING) AND CMAKE_VERSION VERSION_LESS 2.8.9)  # todo: Remove this when CMake minimum version is 2.8.9
-        set_property (TARGET ${STATIC_LIBRARY_TARGETS} APPEND PROPERTY COMPILE_FLAGS -fPIC)
-    endif ()
 endif ()
 
 # Install headers for using the Urho3D library
@@ -438,19 +448,15 @@ set (OPTIONAL_SUBS AngelScript Database Lua Navigation Network Physics Urho2D)
 foreach (SUB ${OPTIONAL_SUBS})
     if (URHO_HEADERS MATCHES "(include/Urho3D/${SUB}[^;]+)")
         list (FIND URHO_HEADERS ${CMAKE_MATCH_1} FOUND_INDEX)
-        if (FOUND_INDEX GREATER -1)
-            list (INSERT URHO_HEADERS ${FOUND_INDEX} "#endif")
-        endif ()
+        list (INSERT URHO_HEADERS ${FOUND_INDEX} "#endif")
     endif ()
 endforeach ()
 list (REVERSE URHO_HEADERS)
 foreach (SUB ${OPTIONAL_SUBS})
     if (URHO_HEADERS MATCHES "(include/Urho3D/${SUB}[^;]+)")
+        string (TOUPPER ${SUB} SUB)
         list (FIND URHO_HEADERS ${CMAKE_MATCH_1} FOUND_INDEX)
-        if (FOUND_INDEX GREATER -1)
-            string (TOUPPER ${SUB} SUB)
-            list (INSERT URHO_HEADERS ${FOUND_INDEX} "#if URHO3D_${SUB}")
-        endif ()
+        list (INSERT URHO_HEADERS ${FOUND_INDEX} "#if URHO3D_${SUB}")
     endif ()
 endforeach ()
 string (REGEX REPLACE "include/[^;]+(DebugNew|Direct3D|ODBC|OpenGL|Precompiled|SQLite|ToluaUtils|Urho3D|librevision)[^;]+;" "" URHO_HEADERS "${URHO_HEADERS};")
@@ -460,9 +466,6 @@ configure_file (${CMAKE_CURRENT_SOURCE_DIR}/Urho3DAll.h.in ${CMAKE_CURRENT_BINAR
 install_header_files (FILES ${CMAKE_CURRENT_BINARY_DIR}/Urho3DAll.h ${CMAKE_CURRENT_BINARY_DIR}/librevision.h DESTINATION ${DEST_INCLUDE_DIR})
 
 # Generate platform specific pkg-config file for the benefit of Urho3D library users via SDK without CMake
-get_directory_property (URHO3D_COMPILE_DEFINITIONS DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} COMPILE_DEFINITIONS)
-# Remove those defines that are only used for building the library and not needed by library user
-list (REMOVE_ITEM URHO3D_COMPILE_DEFINITIONS HAVE_STDINT_H GLEW_STATIC GLEW_NO_GLU HAVE_SINCOSF HAVE_UNDERSCORE_SINCOSF URHO3D_IS_BUILDING ODBC_3_OR_LATER ASSET_DIR_INDICATOR)
 if (ABSOLUTE_PATH_LIBS)
     string (REPLACE ";" "\" \"" URHO3D_ABS_PATH_LIBS "\"${ABSOLUTE_PATH_LIBS}\"")   # Note: need to always "stringify" a variable in list context for replace to work correctly, besides the list could be empty
     string (REPLACE "${SYSROOT}" "\${pc_sysrootdir}" URHO3D_ABS_PATH_LIBS "${URHO3D_ABS_PATH_LIBS}")

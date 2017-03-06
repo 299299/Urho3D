@@ -155,7 +155,7 @@ else ()
             file (STRINGS ${URHO3D_BASE_INCLUDE_DIR}/Urho3D.h MSVC_STATIC_LIB REGEX "^#define URHO3D_STATIC_DEFINE$")
         endif ()
     endif ()
-    # For Android platform, search in path similar to ANDROID_LIBRARY_OUTPUT_PATH variable
+    # For Android platform, search in path based on the chosen Android ABI
     if (ANDROID)
         if (URHO3D_HOME)
             set (URHO3D_LIB_SEARCH_HINT HINTS ${URHO3D_HOME}/libs/${ANDROID_NDK_ABI_NAME})
@@ -169,10 +169,6 @@ else ()
     endif ()
     set (URHO3D_LIB_TYPE_SAVED ${URHO3D_LIB_TYPE})  # We need this to reset the auto-discovered URHO3D_LIB_TYPE variable before looping
     foreach (ABI_64BIT RANGE ${URHO3D_64BIT} 0)
-        # Break if the compiler is not multilib-capable and the ABI is not its native
-        if ((MSVC OR ANDROID OR ARM OR WEB) AND NOT ABI_64BIT EQUAL NATIVE_64BIT)
-            break ()
-        endif ()
         # Set to search in 'lib' or 'lib64' based on the ABI being tested
         set_property (GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS ${ABI_64BIT})    # Leave this global property setting afterwards, do not restore it to its previous value
         find_library (URHO3D_LIBRARIES NAMES Urho3D ${URHO3D_LIB_SEARCH_HINT} PATH_SUFFIXES ${PATH_SUFFIX} ${SEARCH_OPT} DOC "Urho3D library directory")
@@ -236,6 +232,7 @@ else ()
                 endif ()
             endif ()
             set (COMPILER_FLAGS "${COMPILER_32BIT_FLAG} ${CMAKE_REQUIRED_FLAGS}")
+            string (REPLACE .js ";" COMPILER_FLAGS "${COMPILER_FLAGS}")     # Emscripten-specific - revise SmileyHack to inject empty suffix to keep try_compile() happy
             while (NOT URHO3D_COMPILE_RESULT)
                 try_compile (URHO3D_COMPILE_RESULT ${CMAKE_BINARY_DIR} ${CMAKE_CURRENT_LIST_DIR}/CheckUrho3DLibrary.cpp
                     CMAKE_FLAGS -DCOMPILE_DEFINITIONS:STRING=${COMPILER_FLAGS} -DLINK_LIBRARIES:STRING=${URHO3D_LIBRARIES} -DINCLUDE_DIRECTORIES:STRING=${URHO3D_INCLUDE_DIRS} ${COMPILER_STATIC_DEFINE} ${COMPILER_STATIC_RUNTIME_FLAGS}
@@ -280,6 +277,10 @@ else ()
                 set (URHO3D_LIB_TYPE ${URHO3D_LIB_TYPE_SAVED})
                 unset (URHO3D_LIBRARIES CACHE)
             endif ()
+        endif ()
+        # Break if the compiler is not multilib-capable
+        if (MSVC OR ANDROID OR ARM OR WEB)
+            break ()
         endif ()
     endforeach ()
     # If both the non-debug and debug version of the libraries are found on Windows platform then use them both

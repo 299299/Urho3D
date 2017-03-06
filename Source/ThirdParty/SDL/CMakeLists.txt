@@ -501,10 +501,6 @@ if(LIBC)
     set(STDC_HEADERS 1)
   else()
     set(HAVE_LIBC TRUE)
-    # Urho3D - temporary bug fix - starting since Raspbian Jessie some of the headers are installed in the arch-specific directory and it seems that older CMake (prior to release 3.2.3) does not include this directory by default yet, so we have to do that manually
-    if (RPI AND CMAKE_LIBRARY_ARCHITECTURE)
-      include_directories (${SYSROOT}/usr/include/${CMAKE_LIBRARY_ARCHITECTURE})    # SYSROOT is empty when we are not cross-compiling
-    endif ()
     # Urho3D - bug fix - when cross-compiling the headers are rooted, either use "--sysroot" compiler flag or use CMAKE_REQUIRED_INCLUDES (e.g. on RPI) to cater for it
     set (CMAKE_REQUIRED_INCLUDES_SYS_TYPES_SAVED ${CMAKE_REQUIRED_INCLUDES})
     if (CMAKE_CROSSCOMPILING AND NOT "${CMAKE_C_FLAGS} ${CMAKE_REQUIRED_FLAGS}" MATCHES --sysroot)
@@ -981,7 +977,7 @@ elseif(UNIX)    # Urho3D - at this point both UNIX and UNIX_SYS should be equiva
     find_path (UDEV_H_INCLUDE_DIRS libudev.h)
     if (UDEV_H_INCLUDE_DIRS)
       set (HAVE_LIBUDEV_H TRUE)
-      include_directories (${UDEV_H_INCLUDE_DIRS})
+      include_directories (SYSTEM ${UDEV_H_INCLUDE_DIRS})
       # TODO: find the shared library and store the result in the SDL_UDEV_DYNAMIC variable
     endif ()
 
@@ -996,7 +992,7 @@ elseif(UNIX)    # Urho3D - at this point both UNIX and UNIX_SYS should be equiva
     find_path (DBUS_ARCH_DEPS_H_INCLUDE_DIRS NAMES dbus/dbus-arch-deps.h PATHS ${DBUS_INC_SEARCH_PATH} /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/dbus-1.0/include)
     if (DBUS_H_INCLUDE_DIRS AND DBUS_H_INCLUDE_DIRS AND DBUS_ARCH_DEPS_H_INCLUDE_DIRS)
       set(HAVE_DBUS_DBUS_H TRUE)
-      include_directories (${DBUS_H_INCLUDE_DIRS} ${DBUS_ARCH_DEPS_H_INCLUDE_DIRS})
+      include_directories (SYSTEM ${DBUS_H_INCLUDE_DIRS} ${DBUS_ARCH_DEPS_H_INCLUDE_DIRS})
       list(APPEND EXTRA_LIBS dbus-1)
     endif ()
 
@@ -1011,7 +1007,7 @@ elseif(UNIX)    # Urho3D - at this point both UNIX and UNIX_SYS should be equiva
     find_path (GLIB_CONFIG_H_INCLUDE_DIRS NAMES glibconfig.h PATHS ${GLIB_INC_SEARCH_PATH} /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/glib-2.0/include)
     if (IBUS_H_INCLUDE_DIRS AND GLIB_H_INCLUDE_DIRS AND GLIB_CONFIG_H_INCLUDE_DIRS)
       set(HAVE_IBUS_IBUS_H TRUE)
-      include_directories(${IBUS_H_INCLUDE_DIRS} ${GLIB_H_INCLUDE_DIRS} ${GLIB_CONFIG_H_INCLUDE_DIRS})
+      include_directories(SYSTEM ${IBUS_H_INCLUDE_DIRS} ${GLIB_H_INCLUDE_DIRS} ${GLIB_CONFIG_H_INCLUDE_DIRS})
       list(APPEND EXTRA_LIBS ibus-1.0)
       set (SDL_USE_IME 1)
     endif ()
@@ -1020,7 +1016,7 @@ elseif(UNIX)    # Urho3D - at this point both UNIX and UNIX_SYS should be equiva
     find_path (FCITX_H_INCLUDE_DIRS fcitx/frontend.h)
     if (FCITX_H_INCLUDE_DIRS)
       set (HAVE_FCITX_FRONTEND_H TRUE)
-      include_directories (${FCITX_H_INCLUDE_DIRS})
+      include_directories (SYSTEM ${FCITX_H_INCLUDE_DIRS})
       set (SDL_USE_IME 1)
     endif ()
 

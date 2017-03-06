@@ -22,9 +22,9 @@
 #
 
 # Determine source tree and build tree
-if [ "$1" ] && [[ ! "$1" =~ ^- ]]; then BUILD=$1; shift; elif [ -f $(pwd)/CMakeCache.txt ]; then BUILD=$(pwd); else caller=$(ps -o args= $PPID |cut -d' ' -f2); if [[ ! "$caller" =~ cmake_.*\.sh$ ]]; then caller=$0; fi; echo "Usage: ${caller##*/} /path/to/build-tree [build-options]"; exit 1; fi
+if [[ "$1" ]] && [[ ! "$1" =~ ^- ]]; then BUILD=$1; shift; elif [[ -f $(pwd)/CMakeCache.txt ]]; then BUILD=$(pwd); else caller=$(ps -o args= $PPID |cut -d' ' -f2); if [[ ! "$caller" =~ cmake_.*\.sh$ ]]; then caller=$0; fi; echo "Usage: ${caller##*/} /path/to/build-tree [build-options]"; exit 1; fi
 SOURCE=$(cd ${0%/*}; pwd)
-if [ "$BUILD" == "." ]; then BUILD=$(pwd); fi
+if [[ "$BUILD" == "." ]]; then BUILD=$(pwd); fi
 
 # Define helpers
 . "$SOURCE"/.bash_helpers.sh
@@ -48,7 +48,7 @@ for a in $@; do
             IOS=1
             ;;
         -DANDROID=1)
-            ANDROID=1 && OPTS="-DCMAKE_TOOLCHAIN_FILE=$TOOLCHAINS/android.toolchain.cmake"
+            ANDROID=1 && OPTS="-DCMAKE_TOOLCHAIN_FILE=$TOOLCHAINS/Android.cmake"
             ;;
         -DRPI=1)
             if [[ ! $(uname -m) =~ ^arm ]]; then OPTS="-DCMAKE_TOOLCHAIN_FILE=$TOOLCHAINS/raspberrypi.toolchain.cmake"; fi
@@ -60,7 +60,7 @@ for a in $@; do
             OPTS="-DCMAKE_TOOLCHAIN_FILE=$TOOLCHAINS/mingw.toolchain.cmake"
             ;;
         -DWEB=1)
-            OPTS="-DCMAKE_TOOLCHAIN_FILE=$TOOLCHAINS/emscripten.toolchain.cmake"
+            OPTS="-DCMAKE_TOOLCHAIN_FILE=$TOOLCHAINS/Emscripten.cmake"
             ;;
     esac
 done

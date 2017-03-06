@@ -54,7 +54,7 @@ task :cmake do
   platform = 'native'
   build_options = ''
   # TODO: Need to find a way to automatically populate the array with all the Urho3D supported build options, at the moment it only contains those being used in CI
-  ['URHO3D_64BIT', 'URHO3D_LIB_TYPE', 'URHO3D_STATIC_RUNTIME', 'URHO3D_PCH', 'URHO3D_BINDINGS', 'URHO3D_OPENGL', 'URHO3D_D3D11', 'URHO3D_TESTING', 'URHO3D_TEST_TIMEOUT', 'URHO3D_UPDATE_SOURCE_TREE', 'URHO3D_TOOLS', 'URHO3D_DEPLOYMENT_TARGET', 'URHO3D_USE_LIB64_RPM', 'CMAKE_BUILD_TYPE', 'CMAKE_OSX_DEPLOYMENT_TARGET', 'IOS', 'IPHONEOS_DEPLOYMENT_TARGET', 'WIN32', 'MINGW', 'ANDROID', 'ANDROID_ABI', 'ANDROID_NATIVE_API_LEVEL', 'ANDROID_TOOLCHAIN_NAME', 'RPI', 'RPI_ABI', 'ARM', 'ARM_ABI_FLAGS', 'WEB', 'EMSCRIPTEN_SHARE_DATA', 'EMSCRIPTEN_SHARE_JS', 'EMSCRIPTEN_EMRUN_BROWSER'].each { |var|
+  ['URHO3D_64BIT', 'URHO3D_LIB_TYPE', 'URHO3D_STATIC_RUNTIME', 'URHO3D_PCH', 'URHO3D_BINDINGS', 'URHO3D_OPENGL', 'URHO3D_D3D11', 'URHO3D_TESTING', 'URHO3D_TEST_TIMEOUT', 'URHO3D_UPDATE_SOURCE_TREE', 'URHO3D_TOOLS', 'URHO3D_DEPLOYMENT_TARGET', 'URHO3D_USE_LIB64_RPM', 'CMAKE_BUILD_TYPE', 'CMAKE_OSX_DEPLOYMENT_TARGET', 'IOS', 'IPHONEOS_DEPLOYMENT_TARGET', 'WIN32', 'MINGW', 'ANDROID', 'ANDROID_ABI', 'ANDROID_NATIVE_API_LEVEL', 'ANDROID_TOOLCHAIN_NAME', 'RPI', 'RPI_ABI', 'ARM', 'ARM_ABI_FLAGS', 'WEB', 'EMSCRIPTEN_SHARE_DATA', 'EMSCRIPTEN_SHARE_JS', 'EMSCRIPTEN_WASM', 'EMSCRIPTEN_EMRUN_BROWSER', 'CMAKE_EXECUTABLE_SUFFIX_CXX'].each { |var|
     ARGV << "#{var}=\"#{ENV[var]}\"" if ENV[var] && !ARGV.find { |arg| /#{var}=/ =~ arg }
   }
   ARGV.each { |option|
@@ -342,7 +342,7 @@ task :ci do
   # Always use a same build configuration to keep ccache's cache size small; single-config generator needs the option when configuring, while multi-config when building
   ENV[ENV['XCODE'] ? 'config' : 'CMAKE_BUILD_TYPE'] = 'Release' if ENV['USE_CCACHE']
   # Currently we don't have the infra to test run all the platforms; also skip when doing packaging build due to time constraint
-  ENV['URHO3D_TESTING'] = '1' if ((ENV['LINUX'] && !ENV['URHO3D_64BIT']) || (ENV['OSX'] && !ENV['IOS']) || ENV['WEB'] || ENV['APPVEYOR']) && !ENV['PACKAGE_UPLOAD']
+  ENV['URHO3D_TESTING'] = '1' if ((ENV['LINUX'] && !ENV['URHO3D_64BIT']) || (ENV['OSX'] && !ENV['IOS']) || ENV['APPVEYOR']) && !ENV['PACKAGE_UPLOAD']
   # When not explicitly specified then use generic generator
   generator = ENV['XCODE'] ? 'xcode' : (ENV['APPVEYOR'] && !ENV['MINGW'] ? 'vs2015' : '')
   # LuaJIT on MinGW build is not possible on Travis-CI with Ubuntu LTS 12.04 as its GCC cross-compiler version is too old, wait until we have Ubuntu LTS 14.04
@@ -712,24 +712,17 @@ def scaffolding dir, project = 'Scaffolding', target = 'Main'
   end
   dir.gsub!(/\//, '\\') if ENV['OS']
   build_script = <<EOF
-# Set CMake minimum version and CMake policy required by Urho3D-CMake-common module
-if (WIN32)
-    cmake_minimum_required (VERSION 3.2.3)      # Going forward all platforms will use this as minimum version
-else ()
-    cmake_minimum_required (VERSION 2.8.6)
-endif ()
+# Set CMake minimum version and CMake policy required by UrhoCommon module
+cmake_minimum_required (VERSION 3.2.3)
 if (COMMAND cmake_policy)
+    # Libraries linked via full path no longer produce linker search paths
     cmake_policy (SET CMP0003 NEW)
-    if (CMAKE_VERSION VERSION_GREATER 2.8.12 OR CMAKE_VERSION VERSION_EQUAL 2.8.12)
-        # INTERFACE_LINK_LIBRARIES defines the link interface
-        cmake_policy (SET CMP0022 NEW)
-    endif ()
-    if (CMAKE_VERSION VERSION_GREATER 3.0.0 OR CMAKE_VERSION VERSION_EQUAL 3.0.0)
-        # Disallow use of the LOCATION target property - so we set to OLD as we still need it
-        cmake_policy (SET CMP0026 OLD)
-        # MACOSX_RPATH is enabled by default
-        cmake_policy (SET CMP0042 NEW)
-    endif ()
+    # INTERFACE_LINK_LIBRARIES defines the link interface
+    cmake_policy (SET CMP0022 NEW)
+    # Disallow use of the LOCATION target property - so we set to OLD as we still need it
+    cmake_policy (SET CMP0026 OLD)
+    # MACOSX_RPATH is enabled by default
+    cmake_policy (SET CMP0042 NEW)
 endif ()
 
 # Set project name
@@ -738,8 +731,8 @@ project (#{project})
 # Set CMake modules search path
 set (CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMake/Modules)
 
-# Include Urho3D CMake common module
-include (Urho3D-CMake-common)
+# Include UrhoCommon.cmake module after setting project name
+include (UrhoCommon)
 
 # Define target name
 set (TARGET_NAME #{target})
