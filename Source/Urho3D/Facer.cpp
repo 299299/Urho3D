@@ -619,7 +619,7 @@ private:
             renderTexture_->SetFilterMode(FILTER_BILINEAR);
             renderTexture_->GetRenderSurface()->SetViewport(0, rttViewPort);
 
-            SharedPtr<Material> renderMaterial(new Material(context_));
+            /*SharedPtr<Material> renderMaterial(new Material(context_));
             renderMaterial->SetTechnique(0, cache->GetResource<Technique>("Techniques/DiffUnlit.xml"));
             renderMaterial->SetTexture(TU_DIFFUSE, renderTexture_);
             renderMaterial->SetDepthBias(BiasParameters(-0.001f, 0.0f));
@@ -630,7 +630,7 @@ private:
             screenNode->SetScale(Vector3(20.0f, 0.0f, 15.0f));
             StaticModel* screenObject = screenNode->CreateComponent<StaticModel>();
             screenObject->SetModel(cache->GetResource<Model>("Models/Plane.mdl"));
-            screenObject->SetMaterial(renderMaterial);
+            screenObject->SetMaterial(renderMaterial);*/
         }
     }
 
