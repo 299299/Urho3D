@@ -90,8 +90,19 @@ gpu_size_t GetFrameSize();
 
 namespace Urho3D
 {
-
-enum FacialBoneType
+    
+#if defined(IOS) || defined(__EMSCRIPTEN__)
+    // Code for supporting SDL_iPhoneSetAnimationCallback() and emscripten_set_main_loop_arg()
+#if defined(__EMSCRIPTEN__)
+#include <emscripten/emscripten.h>
+#endif
+    void Facer_RunFrame(void* data)
+    {
+        static_cast<Engine*>(data)->RunFrame();
+    }
+#endif
+    
+    enum FacialBoneType
 {
     kFacial_ForeHead,
     kFacial_Nose,
@@ -475,7 +486,7 @@ class FacePlayer : public Application
 {
     URHO3D_OBJECT(FacePlayer, Application);
 public:
-    FacePlayer(Context* context):Application(context),renderToTexture_(false){};
+    FacePlayer(Context* context):Application(context),renderToTexture_(false),manualUpdate_(false){};
 
     virtual void Setup()
     {
@@ -523,6 +534,10 @@ public:
                         {
                             renderToTexture_ = true;
                         }
+                        else if (argument == "manual_update")
+                        {
+                            manualUpdate_ = true;
+                        }
                     }
                 }
             }
@@ -568,11 +583,59 @@ public:
         return renderTexture_->GetGPUObjectName();
     }
 
-    void RunFrame()
+    void Update()
     {
         engine_->RunFrame();
     }
-
+    
+    int RunEngine()
+    {
+#if !defined(__GNUC__) || __EXCEPTIONS
+        try
+        {
+#endif
+            Setup();
+            if (exitCode_)
+                return exitCode_;
+            
+            if (!engine_->Initialize(engineParameters_))
+            {
+                ErrorExit();
+                return exitCode_;
+            }
+            
+            Start();
+            if (exitCode_)
+                return exitCode_;
+            
+            // Platforms other than iOS and Emscripten run a blocking main loop
+#if !defined(IOS) && !defined(__EMSCRIPTEN__)
+            while (!engine_->IsExiting())
+                engine_->RunFrame();
+            
+            Stop();
+            // iOS will setup a timer for running animation frames so eg. Game Center can run. In this case we do not
+            // support calling the Stop() function, as the application will never stop manually
+#else
+#if defined(IOS)
+            if (!manualUpdate_)
+                SDL_iPhoneSetAnimationCallback(GetSubsystem<Graphics>()->GetWindow(), 1, Facer_RunFrame, engine_);
+#elif defined(__EMSCRIPTEN__)
+            emscripten_set_main_loop_arg(RunFrame, engine_, 0, 1);
+#endif
+#endif
+            
+            return exitCode_;
+#if !defined(__GNUC__) || __EXCEPTIONS
+        }
+        catch (std::bad_alloc&)
+        {
+            ErrorDialog(GetTypeName(), "An out-of-memory error occurred. The application will now exit.");
+            return EXIT_FAILURE;
+        }
+#endif
+    }
+    
 private:
     void CreateScene()
     {
@@ -667,6 +730,7 @@ private:
     FacialBoneManager mgr_;
     Mutex lock_;
     bool renderToTexture_;
+    bool manualUpdate_;
 };
 }
 
@@ -689,7 +753,7 @@ int SDL_main(int argc, char** argv)
     SDL_SetMainReady();
     Urho3D::Context* context = new Urho3D::Context();
     g_app = new Urho3D::FacePlayer(context);
-    return g_app->Run();
+    return g_app->RunEngine();
 }
 
 void Urho3D_Init()
@@ -710,7 +774,7 @@ unsigned Urho3D_GetRenderTextureId()
 
 void Urho3D_Update()
 {
-    g_app->RunFrame();
+    g_app->Update();
 }
 
 #if __cplusplus
