@@ -139,6 +139,7 @@ Urho3D development, contributions and bugfixes by:
 - Ner'zhul
 - Newb I the Newbd
 - OvermindDL1
+- PredatorMF
 - Scellow
 - Skrylar
 - TheComet93
@@ -1032,6 +1033,12 @@ Related projects:
 
 - Consolidated Urho3D extra samples (https://github.com/Lumak/Urho3D-Extra-Samples)
 
+Projects using Urho3D:
+
+- heXon - a twin-stick-shooter for up to four players (https://github.com/LucKeyProductions/heXon)
+
+- Quatter - a board game for two players (https://github.com/LucKeyProductions/Quatter)
+
 \page PortingNotes Porting notes
 
 From 1.4 to 1.5:
@@ -1073,6 +1080,7 @@ From 1.6 to master:
 - The shader function GetWorldTangent() now returns a 4-component vector.
 - Build system - the "Urho3D-CMake-common.cmake" file is now renamed to "UrhoCommon.cmake".
 - StaticModel::SetModel() will no longer warn and redirect to AnimatedModel::SetModel() if the wrong function is called from C++ code. The AngelScript API will instead redirect properly without producing a warning.
+- Graphics::SetMode(), Graphics::GetDesktopResolution() and Graphics::GetResolutions() have gained an extra parameter to specify the monitor to use. Use Graphics::GetMonitorCount() to get the number of attached monitors. Monitor number 0 means the default primary monitor.
 */
 
 }
