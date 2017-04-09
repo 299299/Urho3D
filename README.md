@@ -32,6 +32,8 @@ Urho3D development, contributions and bugfixes by:
 - Christian Clavet
 - Sebastian Delatorre (primitivewaste)
 - Josh Engebretson
+- Simon Flores
+- Manuel Freiberger
 - Chris Friesen
 - Alex Fuller
 - Henrik Heino
@@ -117,6 +119,7 @@ Urho3D development, contributions and bugfixes by:
 - neat3d
 - nemerle
 - ninjastone
+- orefkov
 - proller
 - raould
 - rasteron
