@@ -739,6 +739,7 @@ extern "C" {
 #endif
 
 static Urho3D::FacePlayer* g_app = NULL;
+void* g_eagl_ctx = NULL;
 
 void GetEngineWindowRect(int* x, int *y, int* w, int* h)
 {
@@ -775,6 +776,11 @@ unsigned Urho3D_GetRenderTextureId()
 void Urho3D_Update()
 {
     g_app->Update();
+}
+    
+void* Urho3D_GetContext()
+{
+    return g_eagl_ctx;
 }
 
 #if __cplusplus

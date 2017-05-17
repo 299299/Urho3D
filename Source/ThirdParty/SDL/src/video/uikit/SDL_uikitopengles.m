@@ -34,6 +34,8 @@
 #include "SDL_loadso.h"
 #include <dlfcn.h>
 
+extern EAGLContext* g_eagl_ctx;
+
 @interface SDLEAGLContext : EAGLContext
 
 /* The OpenGL ES context owns a view / drawable. */
@@ -161,6 +163,7 @@ UIKit_GL_CreateContext(_THIS, SDL_Window * window)
         if (_this->gl_config.share_with_current_context) {
             EAGLContext *context = (__bridge EAGLContext *) SDL_GL_GetCurrentContext();
             sharegroup = context.sharegroup;
+            NSLog(@"!!!! shared graphics !!!!!\n\n");
         }
 
         if (window->flags & SDL_WINDOW_ALLOW_HIGHDPI) {
@@ -178,6 +181,9 @@ UIKit_GL_CreateContext(_THIS, SDL_Window * window)
         }
 
         context = [[SDLEAGLContext alloc] initWithAPI:api sharegroup:sharegroup];
+        EAGLContext* c = context;
+        g_eagl_ctx = c;
+        
         if (!context) {
             SDL_SetError("OpenGL ES %d context could not be created", _this->gl_config.major_version);
             return NULL;
