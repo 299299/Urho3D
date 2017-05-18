@@ -508,10 +508,14 @@ public:
 
                 for (unsigned i = 0; i < arguments.Size(); ++i)
                 {
+                    printf("argument=%s \n", arguments[i].CString());
+                    
                     if (arguments[i].Length() > 1 && arguments[i][0] == '-')
                     {
                         String argument = arguments[i].Substring(1).ToLower();
                         String value = i + 1 < arguments.Size() ? arguments[i + 1] : String::EMPTY;
+                        
+                        
 
                         if (argument == "x" && !value.Empty())
                         {
