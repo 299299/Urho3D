@@ -83,6 +83,8 @@ typedef struct gpu_size_t{
     uint32_t    height;
 }gpu_size_t;
 gpu_size_t GetFrameSize();
+    
+extern void Urho3D_Post_Update();
 
 #if __cplusplus
 }   // Extern C
@@ -99,6 +101,7 @@ namespace Urho3D
     void Facer_RunFrame(void* data)
     {
         static_cast<Engine*>(data)->RunFrame();
+        Urho3D_Post_Update();
     }
 #endif
     
@@ -549,6 +552,8 @@ public:
         {
             // s_w = 0; s_h = 0; s_x = 0; s_y = 0;
         }
+        
+        printf("++++++++++++++++ render_to_texture=%d, manual_update=%d ++++++++++++++++\n", renderToTexture_, manualUpdate_);
     }
 
     virtual void Start()
