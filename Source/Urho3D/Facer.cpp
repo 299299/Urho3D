@@ -594,7 +594,10 @@ public:
 
     void Update()
     {
+        if (!manualUpdate_)
+            return;
         engine_->RunFrame();
+        Urho3D_Post_Update();
     }
     
     int RunEngine()
