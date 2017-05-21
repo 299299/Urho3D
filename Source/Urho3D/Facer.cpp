@@ -771,22 +771,33 @@ int SDL_main(int argc, char** argv)
 
 void Urho3D_Init()
 {
+    if (g_app != NULL)
+    {
+        printf ("======================== g_app not NULL !!!! ======================== \n");
+        return;
+    }
     printf("Urho3D_Init\n");
     SDL_main(0, 0);
 }
 
 void Urho3D_GetRenderTexture(int* out_w, int* out_h, void* data)
 {
+    if (!g_app)
+        return;
     g_app->GetRenderTexture(out_w, out_h, data);
 }
 
 unsigned Urho3D_GetRenderTextureId()
 {
+    if (!g_app)
+        return 0;
     return g_app->GetRenderTextureId();
 }
 
 void Urho3D_Update()
 {
+    if (!g_app)
+        return;
     g_app->Update();
 }
     
