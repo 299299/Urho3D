@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 src_dir=./.build_ios
-dest_dir=../UrhoDemo/VisioninDemo/VisioninDemo/urho3d/
+dest_dir=../UrhoDemo/urho3d/
 
 cp ${src_dir}/lib/libUrho3D.a ${dest_dir}
 cp ${src_dir}/Source/ThirdParty/FreeType/Debug-iphoneos/libFreeType.a ${dest_dir}

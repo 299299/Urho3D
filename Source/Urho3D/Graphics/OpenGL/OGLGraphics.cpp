@@ -378,7 +378,7 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
 #ifdef IOS
         // On iOS window needs to be resizable to handle orientation changes properly
         resizable = true;
-        SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
+        //SDL_GL_SetAttribute(SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1);
 #endif
 
         SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);

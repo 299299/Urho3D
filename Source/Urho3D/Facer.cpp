@@ -33,6 +33,8 @@
 #include <SDL/SDL.h>
 #include <stdio.h>
 
+//#define FACER_ENABLED
+
 const char* rotate_bone_name = "rabbit2:Bip01_Head";
 const char* head_bone_name = "rabbit2:Bip01_Head";
 static int s_x = -128, s_y = -128, s_w = 128, s_h = 128;
@@ -40,6 +42,8 @@ static int s_x = -128, s_y = -128, s_w = 128, s_h = 128;
 #if __cplusplus
 extern "C" {
 #endif
+
+#ifdef FACER_ENABLED
 typedef struct st_rect_t {
     int left;   ///< 矩形最左边的坐标
     int top;    ///< 矩形最上边的坐标
@@ -83,16 +87,18 @@ typedef struct gpu_size_t{
     uint32_t    height;
 }gpu_size_t;
 gpu_size_t GetFrameSize();
-    
+#endif
+
 extern void Urho3D_Post_Update();
 
 #if __cplusplus
 }   // Extern C
 #endif
 
+
 namespace Urho3D
 {
-    
+
 #if defined(IOS) || defined(__EMSCRIPTEN__)
     // Code for supporting SDL_iPhoneSetAnimationCallback() and emscripten_set_main_loop_arg()
 #if defined(__EMSCRIPTEN__)
@@ -104,8 +110,8 @@ namespace Urho3D
         Urho3D_Post_Update();
     }
 #endif
-    
-    enum FacialBoneType
+
+enum FacialBoneType
 {
     kFacial_ForeHead,
     kFacial_Nose,
@@ -228,7 +234,7 @@ Vector<String> GetChildNodeNames(Node* node)
 }
 
 
-
+#ifdef FACER_ENABLED
 struct FacialBone
 {
     FacialBone() {};
@@ -484,7 +490,8 @@ struct FacialBoneManager
         }
     }
 };
-
+#endif
+    
 class FacePlayer : public Application
 {
     URHO3D_OBJECT(FacePlayer, Application);
@@ -509,13 +516,13 @@ public:
                 for (unsigned i = 0; i < arguments.Size(); ++i)
                 {
                     printf("argument=%s \n", arguments[i].CString());
-                    
+
                     if (arguments[i].Length() > 1 && arguments[i][0] == '-')
                     {
                         String argument = arguments[i].Substring(1).ToLower();
                         String value = i + 1 < arguments.Size() ? arguments[i + 1] : String::EMPTY;
-                        
-                        
+
+
 
                         if (argument == "x" && !value.Empty())
                         {
@@ -556,15 +563,17 @@ public:
         {
             // s_w = 0; s_h = 0; s_x = 0; s_y = 0;
         }
-        
+
         printf("++++++++++++++++ render_to_texture=%d, manual_update=%d ++++++++++++++++\n", renderToTexture_, manualUpdate_);
     }
 
     virtual void Start()
     {
+#ifdef FACER_EANBLED
         Graphics* g = GetSubsystem<Graphics>();
         gpu_size_t f_size = GetFrameSize();
         printf("graphics-width=%d,height=%d gpu-width=%d,height=%d\n", g->GetWidth(), g->GetHeight(), f_size.width, f_size.height);
+#endif
 
         CreateScene();
         CreateUI();
@@ -599,7 +608,7 @@ public:
         engine_->RunFrame();
         Urho3D_Post_Update();
     }
-    
+
     int RunEngine()
     {
 #if !defined(__GNUC__) || __EXCEPTIONS
@@ -609,22 +618,22 @@ public:
             Setup();
             if (exitCode_)
                 return exitCode_;
-            
+
             if (!engine_->Initialize(engineParameters_))
             {
                 ErrorExit();
                 return exitCode_;
             }
-            
+
             Start();
             if (exitCode_)
                 return exitCode_;
-            
+
             // Platforms other than iOS and Emscripten run a blocking main loop
 #if !defined(IOS) && !defined(__EMSCRIPTEN__)
             while (!engine_->IsExiting())
                 engine_->RunFrame();
-            
+
             Stop();
             // iOS will setup a timer for running animation frames so eg. Game Center can run. In this case we do not
             // support calling the Stop() function, as the application will never stop manually
@@ -636,7 +645,7 @@ public:
             emscripten_set_main_loop_arg(RunFrame, engine_, 0, 1);
 #endif
 #endif
-            
+
             return exitCode_;
 #if !defined(__GNUC__) || __EXCEPTIONS
         }
@@ -647,7 +656,7 @@ public:
         }
 #endif
     }
-    
+
 private:
     void CreateScene()
     {
@@ -655,8 +664,10 @@ private:
         scene_ = new Scene(context_);
         SharedPtr<File> file = cache->GetFile("Scenes/Head.xml");
         scene_->LoadXML(*file);
+#ifdef FACER_EANBLED
         mgr_.Init(scene_);
-
+#endif
+        
         cameraNode_ = scene_->CreateChild("Camera");
         cameraNode_->CreateComponent<Camera>();
         cameraNode_->SetPosition(Vector3(0.0f, 0.55f, -1.5f));
@@ -720,7 +731,9 @@ private:
     {
         using namespace Update;
         float timeStep = eventData[P_TIMESTEP].GetFloat();
+#ifdef FACER_EANBLED
         mgr_.Update(timeStep, debugText_);
+#endif
     }
 
     void HanldeEndRendering(StringHash eventType, VariantMap& eventData)
@@ -739,7 +752,9 @@ private:
     SharedPtr<Text> debugText_;
     SharedPtr<Node> rttCameraNode_;
     SharedPtr<Texture2D> renderTexture_;
+#ifdef FACER_EANBLED
     FacialBoneManager mgr_;
+#endif
     Mutex lock_;
     bool renderToTexture_;
     bool manualUpdate_;
@@ -800,7 +815,7 @@ void Urho3D_Update()
         return;
     g_app->Update();
 }
-    
+
 void* Urho3D_GetContext()
 {
     return g_eagl_ctx;
