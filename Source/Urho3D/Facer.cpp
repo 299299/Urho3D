@@ -664,7 +664,7 @@ private:
         scene_ = new Scene(context_);
         SharedPtr<File> file = cache->GetFile("Scenes/Head.xml");
         scene_->LoadXML(*file);
-#ifdef FACER_EANBLED
+#ifdef FACER_ENABLED
         mgr_.Init(scene_);
 #endif
         
@@ -731,7 +731,7 @@ private:
     {
         using namespace Update;
         float timeStep = eventData[P_TIMESTEP].GetFloat();
-#ifdef FACER_EANBLED
+#ifdef FACER_ENABLED
         mgr_.Update(timeStep, debugText_);
 #endif
     }
@@ -752,7 +752,7 @@ private:
     SharedPtr<Text> debugText_;
     SharedPtr<Node> rttCameraNode_;
     SharedPtr<Texture2D> renderTexture_;
-#ifdef FACER_EANBLED
+#ifdef FACER_ENABLED
     FacialBoneManager mgr_;
 #endif
     Mutex lock_;
