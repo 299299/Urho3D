@@ -810,7 +810,7 @@ private:
         if (cameraTexture_->GetWidth() != cameraTextureReq_->width ||
             cameraTexture_->GetHeight() != cameraTextureReq_->height)
         {
-            cameraTexture_->SetSize(cameraTextureReq_->width, cameraTextureReq_->height, cameraTexture_->GetFormat());
+            cameraTexture_->SetSize(cameraTextureReq_->width, cameraTextureReq_->height, Graphics::GetRGBAFormat());
         }
         
         cameraTexture_->SetData(0, 0, 0, cameraTexture_->GetWidth(), cameraTexture_->GetHeight(), cameraTextureReq_->data);
