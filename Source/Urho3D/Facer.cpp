@@ -52,7 +52,19 @@ struct TextureReq
         height = h;
         data_size = psize;
         data = new unsigned char[psize];
-        memcpy(data, p, psize);
+        
+        for (int i=0; i<psize; i+=4)
+        {
+            uint b = p[i];
+            uint g = p[i+1];
+            uint r = p[i+2];
+            uint a = p[i+3];
+            
+            data[i] = 255;//r;
+            data[i+1] = 255;//g;
+            data[i+2] = 255;//b;
+            data[i+3] = 255;//a;
+        }
     }
     
     ~TextureReq()
@@ -360,6 +372,7 @@ struct FacialBoneManager
     void Init(Scene* scene)
     {
         face_node = scene->GetChild("Head", true);
+        face_node->SetEnabled(false);
 
         AnimatedModel* am = face_node->GetComponent<AnimatedModel>();
         am->SetCastShadows(false);
@@ -711,9 +724,16 @@ private:
         }
         
         cameraTexture_ = new Texture2D(context_);
-        cameraTexture_->SetFilterMode(Urho3D::TextureFilterMode::FILTER_NEAREST);
         cameraTexture_->SetNumLevels(1);
         cameraTexture_->SetName("$CameraTexture$");
+        cameraTexture_->SetSize(256, 256, Graphics::GetRGBFormat(), TEXTURE_DYNAMIC);
+        unsigned char* p = new unsigned char[256*256*4];
+        for (size_t i=0; i<256*256*4; i++)
+        {
+            p[i] = 255;
+        }
+        cameraTexture_->SetData(0, 0, 0, 256, 256, p);
+
         GetSubsystem<ResourceCache>()->AddManualResource(cameraTexture_);
         
         Node* backgroundNode = scene_->GetChild("Background", true);
@@ -788,17 +808,21 @@ private:
 #ifdef FACER_ENABLED
         mgr_.Update(timeStep, debugText_);
 #endif
-        UpdateCameraTexture();
+        //UpdateCameraTexture();
     }
 
     void HanldeEndRendering(StringHash eventType, VariantMap& eventData)
     {
-        MutexLock _l(lock_);
-        Graphics* g = GetSubsystem<Graphics>();
-        if (renderTexture_->GetWidth() != g->GetWidth() || renderTexture_->GetHeight() != g->GetHeight())
         {
-            renderTexture_->SetSize(g->GetWidth(), g->GetHeight(), Graphics::GetRGBFormat(), TEXTURE_RENDERTARGET);
+            MutexLock _l(lock_);
+            Graphics* g = GetSubsystem<Graphics>();
+            if (renderTexture_->GetWidth() != g->GetWidth() || renderTexture_->GetHeight() != g->GetHeight())
+            {
+                renderTexture_->SetSize(g->GetWidth(), g->GetHeight(), Graphics::GetRGBFormat(), TEXTURE_RENDERTARGET);
+            }
         }
+        
+        // UpdateCameraTexture();
     }
     
     void UpdateCameraTexture()
@@ -810,13 +834,10 @@ private:
         if (cameraTexture_->GetWidth() != cameraTextureReq_->width ||
             cameraTexture_->GetHeight() != cameraTextureReq_->height)
         {
-            cameraTexture_->SetSize(cameraTextureReq_->width, cameraTextureReq_->height, Graphics::GetRGBAFormat());
+            cameraTexture_->SetSize(cameraTextureReq_->width, cameraTextureReq_->height, Graphics::GetRGBAFormat(), TEXTURE_DYNAMIC);
         }
         
         cameraTexture_->SetData(0, 0, 0, cameraTexture_->GetWidth(), cameraTexture_->GetHeight(), cameraTextureReq_->data);
-        
-        delete cameraTextureReq_;
-        cameraTextureReq_ = NULL;
     }
 
 private:
