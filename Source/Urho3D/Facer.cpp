@@ -43,27 +43,27 @@ struct TextureReq
 {
     int width;
     int height;
-    int data_size;
     unsigned char* data;
     
-    TextureReq(int w, int h, const unsigned char* p, int psize)
+    TextureReq(int w, int h, const unsigned char* p)
     {
         width = w;
         height = h;
-        data_size = psize;
-        data = new unsigned char[psize];
+        data = new unsigned char[w*h*3];
         
-        for (int i=0; i<psize; i+=4)
+        const int csize = w*h*4;
+        int j = 0;
+        for (int i=0; i<csize; i+=4)
         {
             uint b = p[i];
             uint g = p[i+1];
             uint r = p[i+2];
             uint a = p[i+3];
             
-            data[i] = 255;//r;
-            data[i+1] = 255;//g;
-            data[i+2] = 255;//b;
-            data[i+3] = 255;//a;
+            data[j] = r;
+            data[j+1] = g;
+            data[j+2] = b;
+            j+=3;
         }
     }
     
@@ -372,7 +372,6 @@ struct FacialBoneManager
     void Init(Scene* scene)
     {
         face_node = scene->GetChild("Head", true);
-        face_node->SetEnabled(false);
 
         AnimatedModel* am = face_node->GetComponent<AnimatedModel>();
         am->SetCastShadows(false);
@@ -636,9 +635,9 @@ public:
         return renderTexture_->GetGPUObjectName();
     }
     
-    void ProcessVideoBuffer(const unsigned char* buffer, int w, int h, int data_size)
+    void ProcessVideoBuffer(const unsigned char* buffer, int w, int h)
     {
-        TextureReq* req = new TextureReq(w, h, buffer, data_size);
+        TextureReq* req = new TextureReq(w, h, buffer);
         MutexLock _l(cameraTextureLock_);
         if (cameraTextureReq_)
             delete cameraTextureReq_;
@@ -726,13 +725,10 @@ private:
         cameraTexture_ = new Texture2D(context_);
         cameraTexture_->SetNumLevels(1);
         cameraTexture_->SetName("$CameraTexture$");
-        cameraTexture_->SetSize(256, 256, Graphics::GetRGBFormat(), TEXTURE_DYNAMIC);
-        unsigned char* p = new unsigned char[256*256*4];
-        for (size_t i=0; i<256*256*4; i++)
-        {
-            p[i] = 255;
-        }
-        cameraTexture_->SetData(0, 0, 0, 256, 256, p);
+        cameraTexture_->SetFilterMode(FILTER_BILINEAR);
+        cameraTexture_->SetAddressMode(COORD_U, ADDRESS_CLAMP);
+        cameraTexture_->SetAddressMode(COORD_V, ADDRESS_CLAMP);
+        cameraTexture_->SetAddressMode(COORD_W, ADDRESS_CLAMP);
 
         GetSubsystem<ResourceCache>()->AddManualResource(cameraTexture_);
         
@@ -808,7 +804,7 @@ private:
 #ifdef FACER_ENABLED
         mgr_.Update(timeStep, debugText_);
 #endif
-        //UpdateCameraTexture();
+        UpdateCameraTexture();
     }
 
     void HanldeEndRendering(StringHash eventType, VariantMap& eventData)
@@ -834,7 +830,7 @@ private:
         if (cameraTexture_->GetWidth() != cameraTextureReq_->width ||
             cameraTexture_->GetHeight() != cameraTextureReq_->height)
         {
-            cameraTexture_->SetSize(cameraTextureReq_->width, cameraTextureReq_->height, Graphics::GetRGBAFormat(), TEXTURE_DYNAMIC);
+            cameraTexture_->SetSize(cameraTextureReq_->width, cameraTextureReq_->height, Graphics::GetRGBFormat(), TEXTURE_DYNAMIC);
         }
         
         cameraTexture_->SetData(0, 0, 0, cameraTexture_->GetWidth(), cameraTexture_->GetHeight(), cameraTextureReq_->data);
@@ -919,11 +915,11 @@ void* Urho3D_GetContext()
     return g_eagl_ctx;
 }
     
-void Urho3D_ProcessVideoBuffer(const unsigned char* buffer, int w, int h, int data_size)
+void Urho3D_ProcessVideoBuffer(const unsigned char* buffer, int w, int h)
 {
     if (!g_app)
         return;
-    g_app->ProcessVideoBuffer(buffer, w, h, data_size);
+    g_app->ProcessVideoBuffer(buffer, w, h);
 
 }
 
