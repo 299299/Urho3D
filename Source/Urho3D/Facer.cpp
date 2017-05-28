@@ -711,9 +711,7 @@ private:
         mgr_.Init(scene_);
 #endif
         
-        cameraNode_ = scene_->CreateChild("Camera");
-        cameraNode_->CreateComponent<Camera>();
-        cameraNode_->SetPosition(Vector3(0.0f, 0.55f, -1.5f));
+        cameraNode_ = scene_->GetChild("Camera", true);
 
         if (renderToTexture_)
         {
@@ -730,7 +728,7 @@ private:
         cameraTexture_->SetAddressMode(COORD_V, ADDRESS_CLAMP);
         cameraTexture_->SetAddressMode(COORD_W, ADDRESS_CLAMP);
 
-        GetSubsystem<ResourceCache>()->AddManualResource(cameraTexture_);
+        cache->AddManualResource(cameraTexture_);
         
         Node* backgroundNode = scene_->GetChild("Background", true);
         if (backgroundNode != NULL)
@@ -764,7 +762,6 @@ private:
         Renderer* renderer = GetSubsystem<Renderer>();
         SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
         renderer->SetViewport(0, viewport);
-        ResourceCache* cache = GetSubsystem<ResourceCache>();
 
         if (renderToTexture_)
         {
