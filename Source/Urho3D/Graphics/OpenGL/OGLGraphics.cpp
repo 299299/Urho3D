@@ -223,8 +223,8 @@ bool Graphics::gl3Support = false;
 Graphics::Graphics(Context* context_) :
     Object(context_),
     impl_(new GraphicsImpl()),
-    window_(0),
-    externalWindow_(0),
+    window_(nullptr),
+    externalWindow_(nullptr),
     width_(0),
     height_(0),
     position_(SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED),
@@ -234,6 +234,8 @@ Graphics::Graphics(Context* context_) :
     resizable_(false),
     highDPI_(false),
     vsync_(false),
+    monitor_(0),
+    refreshRate_(0),
     tripleBuffer_(false),
     sRGB_(false),
     forceGL2_(false),
@@ -278,7 +280,7 @@ Graphics::~Graphics()
     Close();
 
     delete impl_;
-    impl_ = 0;
+    impl_ = nullptr;
 
     context_->ReleaseSDL();
 }
@@ -428,9 +430,10 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
         SDL_Rect display_rect;
         SDL_GetDisplayBounds(monitor, &display_rect);
         SDL_SetWindowPosition(window_, display_rect.x, display_rect.y);
+        bool reposition = fullscreen || (borderless && width >= display_rect.w && height >= display_rect.h);
 
-        int x = fullscreen || borderless ? display_rect.x : position_.x_;
-        int y = fullscreen || borderless ? display_rect.y : position_.y_;
+        int x = reposition ? display_rect.x : position_.x_;
+        int y = reposition ? display_rect.y : position_.y_;
 
         unsigned flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
         if (fullscreen)
@@ -495,22 +498,27 @@ bool Graphics::SetMode(int width, int height, bool fullscreen, bool borderless, 
     // Set vsync
     SDL_GL_SetSwapInterval(vsync ? 1 : 0);
 
-    // Store the system FBO on IOS now
-#ifdef IOS
+    // Store the system FBO on iOS/tvOS now
+#if defined(IOS) || defined(TVOS)
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, (GLint*)&impl_->systemFBO_);
 #endif
 
     fullscreen_ = fullscreen;
     borderless_ = borderless;
     resizable_ = resizable;
-    highDPI_ = highDPI;
     vsync_ = vsync;
     tripleBuffer_ = tripleBuffer;
     multiSample_ = multiSample;
+    monitor_ = monitor;
+    refreshRate_ = refreshRate;
 
     SDL_GL_GetDrawableSize(window_, &width_, &height_);
     if (!fullscreen)
         SDL_GetWindowPosition(window_, &position_.x_, &position_.y_);
+
+    int logicalWidth, logicalHeight;
+    SDL_GetWindowSize(window_, &logicalWidth, &logicalHeight);
+    highDPI_ = (width_ != logicalWidth) || (height_ != logicalHeight);
 
     // Reset rendertargets and viewport for the new screen mode
     ResetRenderTargets();
@@ -652,7 +660,7 @@ bool Graphics::BeginFrame()
 
     // Cleanup textures from previous frame
     for (unsigned i = 0; i < MAX_TEXTURE_UNITS; ++i)
-        SetTexture(i, 0);
+        SetTexture(i, nullptr);
 
     // Enable color and depth write
     SetColorWrite(true);
@@ -756,7 +764,7 @@ bool Graphics::ResolveToTexture(Texture2D* destination, const IntRect& viewport)
     // Use Direct3D convention with the vertical coordinates ie. 0 is top
     SetTextureForUpdate(destination);
     glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, vpCopy.left_, height_ - vpCopy.bottom_, vpCopy.Width(), vpCopy.Height());
-    SetTexture(0, 0);
+    SetTexture(0, nullptr);
 
     return true;
 }
@@ -1026,7 +1034,7 @@ bool Graphics::SetVertexBuffers(const PODVector<VertexBuffer*>& buffers, unsigne
 
     for (unsigned i = 0; i < MAX_VERTEX_STREAMS; ++i)
     {
-        VertexBuffer* buffer = 0;
+        VertexBuffer* buffer = nullptr;
         if (i < buffers.Size())
             buffer = buffers[i];
         if (buffer != vertexBuffers_[i])
@@ -1071,11 +1079,11 @@ void Graphics::SetShaders(ShaderVariation* vs, ShaderVariation* ps)
             else
             {
                 URHO3D_LOGERROR("Failed to compile vertex shader " + vs->GetFullName() + ":\n" + vs->GetCompilerOutput());
-                vs = 0;
+                vs = nullptr;
             }
         }
         else
-            vs = 0;
+            vs = nullptr;
     }
 
     if (ps && !ps->GetGPUObjectName())
@@ -1090,19 +1098,19 @@ void Graphics::SetShaders(ShaderVariation* vs, ShaderVariation* ps)
             else
             {
                 URHO3D_LOGERROR("Failed to compile pixel shader " + ps->GetFullName() + ":\n" + ps->GetCompilerOutput());
-                ps = 0;
+                ps = nullptr;
             }
         }
         else
-            ps = 0;
+            ps = nullptr;
     }
 
     if (!vs || !ps)
     {
         glUseProgram(0);
-        vertexShader_ = 0;
-        pixelShader_ = 0;
-        impl_->shaderProgram_ = 0;
+        vertexShader_ = nullptr;
+        pixelShader_ = nullptr;
+        impl_->shaderProgram_ = nullptr;
     }
     else
     {
@@ -1123,7 +1131,7 @@ void Graphics::SetShaders(ShaderVariation* vs, ShaderVariation* ps)
             else
             {
                 glUseProgram(0);
-                impl_->shaderProgram_ = 0;
+                impl_->shaderProgram_ = nullptr;
             }
         }
         else
@@ -1144,7 +1152,7 @@ void Graphics::SetShaders(ShaderVariation* vs, ShaderVariation* ps)
                 URHO3D_LOGERROR("Failed to link vertex shader " + vs->GetFullName() + " and pixel shader " + ps->GetFullName() + ":\n" +
                          newProgram->GetLinkerOutput());
                 glUseProgram(0);
-                impl_->shaderProgram_ = 0;
+                impl_->shaderProgram_ = nullptr;
             }
 
             impl_->shaderPrograms_[combination] = newProgram;
@@ -1186,7 +1194,7 @@ void Graphics::SetShaders(ShaderVariation* vs, ShaderVariation* ps)
     else
     {
         impl_->usedVertexAttributes_ = 0;
-        impl_->vertexAttributes_ = 0;
+        impl_->vertexAttributes_ = nullptr;
     }
 
     impl_->vertexBuffersDirty_ = true;
@@ -1657,19 +1665,19 @@ void Graphics::SetTextureParametersDirty()
 void Graphics::ResetRenderTargets()
 {
     for (unsigned i = 0; i < MAX_RENDERTARGETS; ++i)
-        SetRenderTarget(i, (RenderSurface*)0);
-    SetDepthStencil((RenderSurface*)0);
+        SetRenderTarget(i, (RenderSurface*)nullptr);
+    SetDepthStencil((RenderSurface*)nullptr);
     SetViewport(IntRect(0, 0, width_, height_));
 }
 
 void Graphics::ResetRenderTarget(unsigned index)
 {
-    SetRenderTarget(index, (RenderSurface*)0);
+    SetRenderTarget(index, (RenderSurface*)nullptr);
 }
 
 void Graphics::ResetDepthStencil()
 {
-    SetDepthStencil((RenderSurface*)0);
+    SetDepthStencil((RenderSurface*)nullptr);
 }
 
 void Graphics::SetRenderTarget(unsigned index, RenderSurface* renderTarget)
@@ -1710,7 +1718,7 @@ void Graphics::SetRenderTarget(unsigned index, RenderSurface* renderTarget)
 
 void Graphics::SetRenderTarget(unsigned index, Texture2D* texture)
 {
-    RenderSurface* renderTarget = 0;
+    RenderSurface* renderTarget = nullptr;
     if (texture)
         renderTarget = texture->GetRenderSurface();
 
@@ -1755,7 +1763,7 @@ void Graphics::SetDepthStencil(RenderSurface* depthStencil)
 
 void Graphics::SetDepthStencil(Texture2D* texture)
 {
-    RenderSurface* depthStencil = 0;
+    RenderSurface* depthStencil = nullptr;
     if (texture)
         depthStencil = texture->GetRenderSurface();
 
@@ -2070,7 +2078,7 @@ void Graphics::SetStencilTest(bool enable, CompareMode mode, StencilOp pass, Ste
 
 bool Graphics::IsInitialized() const
 {
-    return window_ != 0;
+    return window_ != nullptr;
 }
 
 bool Graphics::GetDither() const
@@ -2080,13 +2088,13 @@ bool Graphics::GetDither() const
 
 bool Graphics::IsDeviceLost() const
 {
-    // On iOS treat window minimization as device loss, as it is forbidden to access OpenGL when minimized
-#ifdef IOS
+    // On iOS and tvOS treat window minimization as device loss, as it is forbidden to access OpenGL when minimized
+#if defined(IOS) || defined(TVOS)
     if (window_ && (SDL_GetWindowFlags(window_) & SDL_WINDOW_MINIMIZED) != 0)
         return true;
 #endif
 
-    return impl_->context_ == 0;
+    return impl_->context_ == nullptr;
 }
 
 PODVector<int> Graphics::GetMultiSampleLevels() const
@@ -2173,18 +2181,18 @@ ShaderVariation* Graphics::GetShader(ShaderType type, const char* name, const ch
         String fullShaderName = shaderPath_ + name + shaderExtension_;
         // Try to reduce repeated error log prints because of missing shaders
         if (lastShaderName_ == name && !cache->Exists(fullShaderName))
-            return 0;
+            return nullptr;
 
         lastShader_ = cache->GetResource<Shader>(fullShaderName);
         lastShaderName_ = name;
     }
 
-    return lastShader_ ? lastShader_->GetVariation(type, defines) : (ShaderVariation*)0;
+    return lastShader_ ? lastShader_->GetVariation(type, defines) : nullptr;
 }
 
 VertexBuffer* Graphics::GetVertexBuffer(unsigned index) const
 {
-    return index < MAX_VERTEX_STREAMS ? vertexBuffers_[index] : 0;
+    return index < MAX_VERTEX_STREAMS ? vertexBuffers_[index] : nullptr;
 }
 
 ShaderProgram* Graphics::GetShaderProgram() const
@@ -2213,12 +2221,12 @@ const String& Graphics::GetTextureUnitName(TextureUnit unit)
 
 Texture* Graphics::GetTexture(unsigned index) const
 {
-    return index < MAX_TEXTURE_UNITS ? textures_[index] : 0;
+    return index < MAX_TEXTURE_UNITS ? textures_[index] : nullptr;
 }
 
 RenderSurface* Graphics::GetRenderTarget(unsigned index) const
 {
-    return index < MAX_RENDERTARGETS ? renderTargets_[index] : 0;
+    return index < MAX_RENDERTARGETS ? renderTargets_[index] : nullptr;
 }
 
 IntVector2 Graphics::GetRenderTargetDimensions() const
@@ -2258,6 +2266,10 @@ void Graphics::OnWindowResized()
     width_ = newWidth;
     height_ = newHeight;
 
+    int logicalWidth, logicalHeight;
+    SDL_GetWindowSize(window_, &logicalWidth, &logicalHeight);
+    highDPI_ = (width_ != logicalWidth) || (height_ != logicalHeight);
+
     // Reset rendertargets and viewport for the new screen size. Also clean up any FBO's, as they may be screen size dependent
     CleanupFramebuffers();
     ResetRenderTargets();
@@ -2272,6 +2284,7 @@ void Graphics::OnWindowResized()
     eventData[P_FULLSCREEN] = fullscreen_;
     eventData[P_RESIZABLE] = resizable_;
     eventData[P_BORDERLESS] = borderless_;
+    eventData[P_HIGHDPI] = highDPI_;
     SendEvent(E_SCREENMODE, eventData);
 }
 
@@ -2323,7 +2336,7 @@ void Graphics::CleanupRenderSurface(RenderSurface* surface)
                     currentFBO = i->second_.fbo_;
                 }
                 BindColorAttachment(j, GL_TEXTURE_2D, 0, false);
-                i->second_.colorAttachments_[j] = 0;
+                i->second_.colorAttachments_[j] = nullptr;
                 // Mark drawbuffer bits to need recalculation
                 i->second_.drawBuffers_ = M_MAX_UNSIGNED;
             }
@@ -2337,7 +2350,7 @@ void Graphics::CleanupRenderSurface(RenderSurface* surface)
             }
             BindDepthAttachment(0, false);
             BindStencilAttachment(0, false);
-            i->second_.depthAttachment_ = 0;
+            i->second_.depthAttachment_ = nullptr;
         }
     }
 
@@ -2357,7 +2370,7 @@ void Graphics::CleanupShaderPrograms(ShaderVariation* variation)
     }
 
     if (vertexShader_ == variation || pixelShader_ == variation)
-        impl_->shaderProgram_ = 0;
+        impl_->shaderProgram_ = nullptr;
 }
 
 ConstantBuffer* Graphics::GetOrCreateConstantBuffer(ShaderType /*type*/,  unsigned bindingIndex, unsigned size)
@@ -2411,7 +2424,7 @@ void Graphics::Release(bool clearGPUObjects, bool closeWindow)
     impl_->depthTextures_.Clear();
 
     // End fullscreen mode first to counteract transition and getting stuck problems on OS X
-#if defined(__APPLE__) && !defined(IOS)
+#if defined(__APPLE__) && !defined(IOS) && !defined(TVOS)
     if (closeWindow && fullscreen_ && !externalWindow_)
         SDL_SetWindowFullscreen(window_, 0);
 #endif
@@ -2423,7 +2436,7 @@ void Graphics::Release(bool clearGPUObjects, bool closeWindow)
             URHO3D_LOGINFO("OpenGL context lost");
 
         SDL_GL_DeleteContext(impl_->context_);
-        impl_->context_ = 0;
+        impl_->context_ = nullptr;
     }
 
     if (closeWindow)
@@ -2434,7 +2447,7 @@ void Graphics::Release(bool clearGPUObjects, bool closeWindow)
         if (!externalWindow_ || clearGPUObjects)
         {
             SDL_DestroyWindow(window_);
-            window_ = 0;
+            window_ = nullptr;
         }
     }
 }
@@ -2472,7 +2485,7 @@ void Graphics::Restore()
         }
 #endif
 
-#ifdef IOS
+#if defined(IOS) || defined(TVOS)
         glGetIntegerv(GL_FRAMEBUFFER_BINDING, (GLint*)&impl_->systemFBO_);
 #endif
 
@@ -2766,7 +2779,7 @@ void Graphics::CheckFeatureSupport()
     if (gl3Support)
     {
         // Work around GLEW failure to check extensions properly from a GL3 context
-        instancingSupport_ = glDrawElementsInstanced != 0 && glVertexAttribDivisor != 0;
+        instancingSupport_ = glDrawElementsInstanced != nullptr && glVertexAttribDivisor != nullptr;
         dxtTextureSupport_ = true;
         anisotropySupport_ = true;
         sRGBSupport_ = true;
@@ -2791,8 +2804,8 @@ void Graphics::CheckFeatureSupport()
     if (numSupportedRTs >= 4)
         deferredSupport_ = true;
 
-#if defined(__APPLE__) && !defined(IOS)
-    // On OS X check for an Intel driver and use shadow map RGBA dummy color textures, because mixing
+#if defined(__APPLE__) && !defined(IOS) && !defined(TVOS)
+    // On macOS check for an Intel driver and use shadow map RGBA dummy color textures, because mixing
     // depth-only FBO rendering and backbuffer rendering will bug, resulting in a black screen in full
     // screen mode, and incomplete shadow maps in windowed mode
     String renderer((const char*)glGetString(GL_RENDERER));
@@ -2831,9 +2844,8 @@ void Graphics::CheckFeatureSupport()
     }
     else
     {
-        #ifdef IOS
-        // iOS hack: depth renderbuffer seems to fail, so use depth textures for everything
-        // if supported
+#if defined(IOS) || defined(TVOS)
+        // iOS hack: depth renderbuffer seems to fail, so use depth textures for everything if supported
         glesDepthStencilFormat = GL_DEPTH_COMPONENT;
 #endif
         shadowMapFormat_ = GL_DEPTH_COMPONENT;
@@ -2987,7 +2999,7 @@ void Graphics::PrepareDraw()
                     {
                         SetTextureForUpdate(texture);
                         texture->UpdateParameters();
-                        SetTexture(0, 0);
+                        SetTexture(0, nullptr);
                     }
 
                     if (i->second_.colorAttachments_[j] != renderTargets_[j])
@@ -3010,7 +3022,7 @@ void Graphics::PrepareDraw()
                 if (i->second_.colorAttachments_[j])
                 {
                     BindColorAttachment(j, GL_TEXTURE_2D, 0, false);
-                    i->second_.colorAttachments_[j] = 0;
+                    i->second_.colorAttachments_[j] = nullptr;
                 }
             }
         }
@@ -3032,7 +3044,7 @@ void Graphics::PrepareDraw()
                 {
                     SetTextureForUpdate(texture);
                     texture->UpdateParameters();
-                    SetTexture(0, 0);
+                    SetTexture(0, nullptr);
                 }
 
                 if (i->second_.depthAttachment_ != depthStencil_)
@@ -3058,7 +3070,7 @@ void Graphics::PrepareDraw()
             {
                 BindDepthAttachment(0, false);
                 BindStencilAttachment(0, false);
-                i->second_.depthAttachment_ = 0;
+                i->second_.depthAttachment_ = nullptr;
             }
         }
 
@@ -3192,22 +3204,22 @@ void Graphics::CleanupFramebuffers()
 void Graphics::ResetCachedState()
 {
     for (unsigned i = 0; i < MAX_VERTEX_STREAMS; ++i)
-        vertexBuffers_[i] = 0;
+        vertexBuffers_[i] = nullptr;
 
     for (unsigned i = 0; i < MAX_TEXTURE_UNITS; ++i)
     {
-        textures_[i] = 0;
+        textures_[i] = nullptr;
         impl_->textureTypes_[i] = 0;
     }
 
     for (unsigned i = 0; i < MAX_RENDERTARGETS; ++i)
-        renderTargets_[i] = 0;
+        renderTargets_[i] = nullptr;
 
-    depthStencil_ = 0;
+    depthStencil_ = nullptr;
     viewport_ = IntRect(0, 0, 0, 0);
-    indexBuffer_ = 0;
-    vertexShader_ = 0;
-    pixelShader_ = 0;
+    indexBuffer_ = nullptr;
+    vertexShader_ = nullptr;
+    pixelShader_ = nullptr;
     blendMode_ = BLEND_REPLACE;
     alphaToCoverage_ = false;
     colorWrite_ = true;
@@ -3229,7 +3241,7 @@ void Graphics::ResetCachedState()
     stencilCompareMask_ = M_MAX_UNSIGNED;
     stencilWriteMask_ = M_MAX_UNSIGNED;
     useClipPlane_ = false;
-    impl_->shaderProgram_ = 0;
+    impl_->shaderProgram_ = nullptr;
     impl_->lastInstanceOffset_ = 0;
     impl_->activeTexture_ = 0;
     impl_->enabledVertexAttributes_ = 0;
@@ -3250,7 +3262,7 @@ void Graphics::ResetCachedState()
     }
 
     for (unsigned i = 0; i < MAX_SHADER_PARAMETER_GROUPS * 2; ++i)
-        impl_->constantBuffers_[i] = 0;
+        impl_->constantBuffers_[i] = nullptr;
     impl_->dirtyConstantBuffers_.Clear();
 }
 

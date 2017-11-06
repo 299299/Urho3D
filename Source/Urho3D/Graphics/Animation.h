@@ -107,22 +107,22 @@ static const unsigned char CHANNEL_ROTATION = 0x2;
 static const unsigned char CHANNEL_SCALE = 0x4;
 
 /// Skeletal animation resource.
-class URHO3D_API Animation : public Resource
+class URHO3D_API Animation : public ResourceWithMetadata
 {
-    URHO3D_OBJECT(Animation, Resource);
+    URHO3D_OBJECT(Animation, ResourceWithMetadata);
 
 public:
     /// Construct.
     Animation(Context* context);
     /// Destruct.
-    virtual ~Animation();
+    virtual ~Animation() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
     /// Load resource from stream. May be called from a worker thread. Return true if successful.
-    virtual bool BeginLoad(Deserializer& source);
+    virtual bool BeginLoad(Deserializer& source) override;
     /// Save resource. Return true if successful.
-    virtual bool Save(Serializer& dest) const;
+    virtual bool Save(Serializer& dest) const override;
 
     /// Set animation name.
     void SetAnimationName(const String& name);
@@ -162,9 +162,9 @@ public:
     const HashMap<StringHash, AnimationTrack>& GetTracks() const { return tracks_; }
 
     /// Return number of animation tracks.
-    unsigned GetNumTracks() const { return tracks_.Size(); } 
+    unsigned GetNumTracks() const { return tracks_.Size(); }
 
-    /// Return animation track by index. 
+    /// Return animation track by index.
     AnimationTrack *GetTrack(unsigned index);
 
     /// Return animation track by name.

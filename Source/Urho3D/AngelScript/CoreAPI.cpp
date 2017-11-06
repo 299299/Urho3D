@@ -385,11 +385,11 @@ static asIScriptObject* VariantGetScriptObject(Variant* ptr)
 {
     asIScriptObject* object = static_cast<asIScriptObject*>(ptr->GetVoidPtr());
     if (!object)
-        return 0;
+        return nullptr;
 
     asITypeInfo* scriptObjectInterface = object->GetEngine()->GetTypeInfoByName("ScriptObject");
     if (!object->GetObjectType()->Implements(scriptObjectInterface))
-        return 0;
+        return nullptr;
 
     return object;
 }
@@ -829,6 +829,10 @@ static void RegisterProcessUtils(asIScriptEngine* engine)
     engine->RegisterGlobalFunction("uint GetNumLogicalCPUs()", asFUNCTION(GetNumLogicalCPUs), asCALL_CDECL);
     engine->RegisterGlobalFunction("void SetMiniDumpDir(const String&in)", asFUNCTION(SetMiniDumpDir), asCALL_CDECL);
     engine->RegisterGlobalFunction("String GetMiniDumpDir()", asFUNCTION(GetMiniDumpDir), asCALL_CDECL);
+    engine->RegisterGlobalFunction("uint64 GetTotalMemory()", asFUNCTION(GetTotalMemory), asCALL_CDECL);
+    engine->RegisterGlobalFunction("String GetLoginName()", asFUNCTION(GetLoginName), asCALL_CDECL);
+    engine->RegisterGlobalFunction("String GetHostName()", asFUNCTION(GetHostName), asCALL_CDECL);
+    engine->RegisterGlobalFunction("String GetOSVersion()", asFUNCTION(GetOSVersion), asCALL_CDECL);
 }
 
 static void ConstructAttributeInfo(AttributeInfo* ptr)
@@ -855,13 +859,17 @@ static CScriptArray* AttributeInfoGetEnumNames(AttributeInfo* ptr)
     return VectorToArray<String>(enumNames, "Array<String>");
 }
 
-static CScriptArray* AttributeInfoGetVariantStructureElementNames(AttributeInfo* ptr)
+static Object* CreateObject(const String& objectType)
 {
-    Vector<String> variantStructureElementNames;
-    const char** variantStructureElementNamesPtrs = ptr->variantStructureElementNames_;
-    while (variantStructureElementNamesPtrs && *variantStructureElementNamesPtrs)
-        variantStructureElementNames.Push(*variantStructureElementNamesPtrs++);
-    return VectorToArray<String>(variantStructureElementNames, "Array<String>");
+    if (Context* context = GetScriptContext())
+    {
+        if (SharedPtr<Object> object = context->CreateObject(objectType))
+        {
+            object->AddRef();
+            return object;
+        }
+    }
+    return nullptr;
 }
 
 static void SendEvent(const String& eventType, VariantMap& eventData)
@@ -997,14 +1005,15 @@ void RegisterObject(asIScriptEngine* engine)
     engine->RegisterObjectBehaviour("AttributeInfo", asBEHAVE_DESTRUCT, "void f()", asFUNCTION(DestructAttributeInfo), asCALL_CDECL_OBJLAST);
     engine->RegisterObjectMethod("AttributeInfo", "AttributeInfo& opAssign(const AttributeInfo&in)", asMETHODPR(AttributeInfo, operator =, (const AttributeInfo&), AttributeInfo&), asCALL_THISCALL);
     engine->RegisterObjectMethod("AttributeInfo", "Array<String>@ get_enumNames() const", asFUNCTION(AttributeInfoGetEnumNames), asCALL_CDECL_OBJLAST);
-    engine->RegisterObjectMethod("AttributeInfo", "Array<String>@ get_variantStructureElementNames() const", asFUNCTION(AttributeInfoGetVariantStructureElementNames), asCALL_CDECL_OBJLAST);
     engine->RegisterObjectProperty("AttributeInfo", "VariantType type", offsetof(AttributeInfo, type_));
     engine->RegisterObjectProperty("AttributeInfo", "String name", offsetof(AttributeInfo, name_));
     engine->RegisterObjectProperty("AttributeInfo", "Variant defaultValue", offsetof(AttributeInfo, defaultValue_));
     engine->RegisterObjectProperty("AttributeInfo", "uint mode", offsetof(AttributeInfo, mode_));
+    engine->RegisterObjectProperty("AttributeInfo", "VariantMap metadata", offsetof(AttributeInfo, metadata_));
 
     RegisterObject<Object>(engine, "Object");
 
+    engine->RegisterGlobalFunction("Object@ CreateObject(const String&in)", asFUNCTION(CreateObject), asCALL_CDECL);
     engine->RegisterGlobalFunction("void SendEvent(const String&in, VariantMap& eventData = VariantMap())", asFUNCTION(SendEvent), asCALL_CDECL);
     engine->RegisterGlobalFunction("void SubscribeToEvent(const String&in, const String&in)", asFUNCTION(SubscribeToEvent), asCALL_CDECL);
     engine->RegisterGlobalFunction("void SubscribeToEvent(Object@+, const String&in, const String&in)", asFUNCTION(SubscribeToSenderEvent), asCALL_CDECL);

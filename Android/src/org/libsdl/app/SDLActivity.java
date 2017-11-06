@@ -64,6 +64,8 @@ public class SDLActivity extends Activity {
 
     // Urho3D: flag to load the .so and a new method load them
     private static boolean mIsSharedLibraryLoaded = false;
+    // Urho3D: Hash of activity object that owns state, kept around in order to prevent dying activity overwriting state it no longer owns.
+    private static int mStateOwner = 0;
 
     protected boolean onLoadLibrary(ArrayList<String> libraryNames) {
         for (final String name : libraryNames) {
@@ -98,6 +100,7 @@ public class SDLActivity extends Activity {
         mIsPaused = false;
         mIsSurfaceReady = false;
         mHasFocus = true;
+        mStateOwner = 0;
     }
 
     // Setup
@@ -109,6 +112,7 @@ public class SDLActivity extends Activity {
         super.onCreate(savedInstanceState);
 
         SDLActivity.initialize();
+        mStateOwner = hashCode();
         // So we can call stuff from static callbacks
         mSingleton = this;
 
@@ -122,27 +126,31 @@ public class SDLActivity extends Activity {
                     return filename.matches("^lib.*\\.so$");
                 }
             });
-            Arrays.sort(files, new Comparator<File>() {
-                @Override
-                public int compare(File lhs, File rhs) {
-                    return Long.valueOf(lhs.lastModified()).compareTo(rhs.lastModified());
-                }
-            });
-            ArrayList<String> libraryNames = new ArrayList<String>(files.length);
-            for (final File libraryFilename : files) {
-                String name = libraryFilename.getName().replaceAll("^lib(.*)\\.so$", "$1");
-                libraryNames.add(name);
-            }
-
-            // Load shared libraries
             String errorMsgBrokenLib = "";
-            try {
-                if (onLoadLibrary(libraryNames))
-                    mIsSharedLibraryLoaded = true;
-            } catch(UnsatisfiedLinkError e) {
-                errorMsgBrokenLib = e.getMessage();
-            } catch(Exception e) {
-                errorMsgBrokenLib = e.getMessage();
+            if (files == null) {
+                errorMsgBrokenLib = "no libraries found in path \"" + libraryPath + "\"";
+            } else {
+                Arrays.sort(files, new Comparator<File>() {
+                    @Override
+                    public int compare(File lhs, File rhs) {
+                        return Long.valueOf(lhs.lastModified()).compareTo(rhs.lastModified());
+                    }
+                });
+                ArrayList<String> libraryNames = new ArrayList<String>(files.length);
+                for (final File libraryFilename : files) {
+                    String name = libraryFilename.getName().replaceAll("^lib(.*)\\.so$", "$1");
+                    libraryNames.add(name);
+                }
+
+                // Load shared libraries
+                try {
+                    if (onLoadLibrary(libraryNames))
+                        mIsSharedLibraryLoaded = true;
+                } catch(UnsatisfiedLinkError e) {
+                    errorMsgBrokenLib = e.getMessage();
+                } catch(Exception e) {
+                    errorMsgBrokenLib = e.getMessage();
+                }
             }
 
             if (!errorMsgBrokenLib.isEmpty())
@@ -255,7 +263,8 @@ public class SDLActivity extends Activity {
         if (!SDLActivity.mIsSharedLibraryLoaded) {  // Urho3D
            super.onDestroy();
            // Reset everything in case the user re opens the app
-           SDLActivity.initialize();
+           if (mStateOwner == hashCode())
+               SDLActivity.initialize();
            return;
         }
 
@@ -277,7 +286,8 @@ public class SDLActivity extends Activity {
 
         super.onDestroy();
         // Reset everything in case the user re opens the app
-        SDLActivity.initialize();
+        if (mStateOwner == hashCode())
+            SDLActivity.initialize();
     }
 
     @Override

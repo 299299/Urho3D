@@ -44,10 +44,12 @@ public:
     /// Construct.
     SoundSource(Context* context);
     /// Destruct. Remove self from the audio subsystem
-    virtual ~SoundSource();
+    virtual ~SoundSource() override;
     /// Register object factory.
     static void RegisterObject(Context* context);
 
+    /// Seek to time.
+    void Seek(float seekTime);
     /// Play a sound.
     void Play(Sound* sound);
     /// Play a sound with specified frequency.
