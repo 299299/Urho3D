@@ -33,11 +33,45 @@
 #include <SDL/SDL.h>
 #include <stdio.h>
 
-//#define FACER_ENABLED
+#define FACER_ENABLED
 
 const char* rotate_bone_name = "rabbit2:Bip01_Head";
 const char* head_bone_name = "rabbit2:Bip01_Head";
 static int s_x = -128, s_y = -128, s_w = 128, s_h = 128;
+
+struct TextureReq
+{
+    int width;
+    int height;
+    unsigned char* data;
+    
+    TextureReq(int w, int h, const unsigned char* p)
+    {
+        width = w;
+        height = h;
+        data = new unsigned char[w*h*3];
+        
+        const int csize = w*h*4;
+        int j = 0;
+        for (int i=0; i<csize; i+=4)
+        {
+            uint b = p[i];
+            uint g = p[i+1];
+            uint r = p[i+2];
+            uint a = p[i+3];
+            
+            data[j] = r;
+            data[j+1] = g;
+            data[j+2] = b;
+            j+=3;
+        }
+    }
+    
+    ~TextureReq()
+    {
+        delete []data;
+    }
+};
 
 #if __cplusplus
 extern "C" {
@@ -496,7 +530,7 @@ class FacePlayer : public Application
 {
     URHO3D_OBJECT(FacePlayer, Application);
 public:
-    FacePlayer(Context* context):Application(context),renderToTexture_(false),manualUpdate_(false){};
+    FacePlayer(Context* context):Application(context),renderToTexture_(false),manualUpdate_(false),cameraTextureReq_(NULL){};
 
     virtual void Setup()
     {
@@ -600,6 +634,15 @@ public:
 
         return renderTexture_->GetGPUObjectName();
     }
+    
+    void ProcessVideoBuffer(const unsigned char* buffer, int w, int h)
+    {
+        TextureReq* req = new TextureReq(w, h, buffer);
+        MutexLock _l(cameraTextureLock_);
+        if (cameraTextureReq_)
+            delete cameraTextureReq_;
+        cameraTextureReq_ = req;
+    }
 
     void Update()
     {
@@ -664,17 +707,42 @@ private:
         scene_ = new Scene(context_);
         SharedPtr<File> file = cache->GetFile("Scenes/Head.xml");
         scene_->LoadXML(*file);
-#ifdef FACER_EANBLED
+#ifdef FACER_ENABLED
         mgr_.Init(scene_);
 #endif
         
-        cameraNode_ = scene_->CreateChild("Camera");
-        cameraNode_->CreateComponent<Camera>();
-        cameraNode_->SetPosition(Vector3(0.0f, 0.55f, -1.5f));
+        cameraNode_ = scene_->GetChild("Camera", true);
 
-        rttCameraNode_ = scene_->CreateChild("RttCamera");
-        rttCameraNode_->CreateComponent<Camera>();
-        rttCameraNode_->SetPosition(cameraNode_->GetPosition());
+        if (renderToTexture_)
+        {
+            rttCameraNode_ = scene_->CreateChild("RttCamera");
+            rttCameraNode_->CreateComponent<Camera>();
+            rttCameraNode_->SetPosition(cameraNode_->GetPosition());
+        }
+        
+        cameraTexture_ = new Texture2D(context_);
+        cameraTexture_->SetNumLevels(1);
+        cameraTexture_->SetName("$CameraTexture$");
+        cameraTexture_->SetFilterMode(FILTER_BILINEAR);
+        cameraTexture_->SetAddressMode(COORD_U, ADDRESS_CLAMP);
+        cameraTexture_->SetAddressMode(COORD_V, ADDRESS_CLAMP);
+        cameraTexture_->SetAddressMode(COORD_W, ADDRESS_CLAMP);
+
+        cache->AddManualResource(cameraTexture_);
+        
+        Node* backgroundNode = scene_->GetChild("Background", true);
+        if (backgroundNode != NULL)
+        {
+            StaticModel* model = backgroundNode->GetComponent<StaticModel>();
+            if (model != NULL)
+            {
+                Material* mat = model->GetMaterial();
+                if (mat != NULL)
+                {
+                    mat->SetTexture(TU_DIFFUSE, cameraTexture_);
+                }
+            }
+        }
     }
 
     void CreateUI()
@@ -694,7 +762,6 @@ private:
         Renderer* renderer = GetSubsystem<Renderer>();
         SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cameraNode_->GetComponent<Camera>()));
         renderer->SetViewport(0, viewport);
-        ResourceCache* cache = GetSubsystem<ResourceCache>();
 
         if (renderToTexture_)
         {
@@ -731,19 +798,39 @@ private:
     {
         using namespace Update;
         float timeStep = eventData[P_TIMESTEP].GetFloat();
-#ifdef FACER_EANBLED
+#ifdef FACER_ENABLED
         mgr_.Update(timeStep, debugText_);
 #endif
+        UpdateCameraTexture();
     }
 
     void HanldeEndRendering(StringHash eventType, VariantMap& eventData)
     {
-        MutexLock _l(lock_);
-        Graphics* g = GetSubsystem<Graphics>();
-        if (renderTexture_->GetWidth() != g->GetWidth() || renderTexture_->GetHeight() != g->GetHeight())
         {
-            renderTexture_->SetSize(g->GetWidth(), g->GetHeight(), Graphics::GetRGBFormat(), TEXTURE_RENDERTARGET);
+            MutexLock _l(lock_);
+            Graphics* g = GetSubsystem<Graphics>();
+            if (renderTexture_->GetWidth() != g->GetWidth() || renderTexture_->GetHeight() != g->GetHeight())
+            {
+                renderTexture_->SetSize(g->GetWidth(), g->GetHeight(), Graphics::GetRGBFormat(), TEXTURE_RENDERTARGET);
+            }
         }
+        
+        // UpdateCameraTexture();
+    }
+    
+    void UpdateCameraTexture()
+    {
+        MutexLock _l(cameraTextureLock_);
+        if (!cameraTextureReq_)
+            return;
+        
+        if (cameraTexture_->GetWidth() != cameraTextureReq_->width ||
+            cameraTexture_->GetHeight() != cameraTextureReq_->height)
+        {
+            cameraTexture_->SetSize(cameraTextureReq_->width, cameraTextureReq_->height, Graphics::GetRGBFormat(), TEXTURE_DYNAMIC);
+        }
+        
+        cameraTexture_->SetData(0, 0, 0, cameraTexture_->GetWidth(), cameraTexture_->GetHeight(), cameraTextureReq_->data);
     }
 
 private:
@@ -752,12 +839,16 @@ private:
     SharedPtr<Text> debugText_;
     SharedPtr<Node> rttCameraNode_;
     SharedPtr<Texture2D> renderTexture_;
-#ifdef FACER_EANBLED
+#ifdef FACER_ENABLED
     FacialBoneManager mgr_;
 #endif
     Mutex lock_;
     bool renderToTexture_;
     bool manualUpdate_;
+    
+    SharedPtr<Texture2D> cameraTexture_;
+    Mutex cameraTextureLock_;
+    TextureReq* cameraTextureReq_;
 };
 }
 
@@ -819,6 +910,14 @@ void Urho3D_Update()
 void* Urho3D_GetContext()
 {
     return g_eagl_ctx;
+}
+    
+void Urho3D_ProcessVideoBuffer(const unsigned char* buffer, int w, int h)
+{
+    if (!g_app)
+        return;
+    g_app->ProcessVideoBuffer(buffer, w, h);
+
 }
 
 #if __cplusplus
