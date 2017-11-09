@@ -25,9 +25,6 @@ set (TARGET_NAME Game)
 
 # Define source files
 define_source_files ()
-if (NOT WEB)
-    define_resource_dirs (EXTRA_DIRS ${CMAKE_SOURCE_DIR}/bin/Autoload)
-endif ()
 
 # Setup target with resource copying
 setup_main_executable (NOBUNDLE)
