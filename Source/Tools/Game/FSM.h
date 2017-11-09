@@ -2,19 +2,22 @@
 #include <Urho3D/Math/StringHash.h>
 #include <Urho3D/Container/HashMap.h>
 #include <Urho3D/Container/Ptr.h>
+#include <Urho3D/IO/Log.h>
+
+static bool d_log = false;
 
 namespace Urho3D
 {
 class DebugRenderer;
 
-static const unsigned RE_ENTER_FLAG = (1 << 0);
+static const unsigned STATE_FLAG_RE_ENTER = (1 << 0);
 
 class State : public RefCounted
 {
 public:
     State()
     :timeInState_(0.0F)
-    ,flag_(0)
+    ,flags_(0)
     {
     }
 
@@ -41,10 +44,6 @@ public:
         timeInState_ += dt;
     }
 
-    virtual void FixedUpdate(float dt)
-    {
-    }
-
     virtual void DebugDraw(DebugRenderer* debug)
     {
     }
@@ -54,15 +53,30 @@ public:
         return " name=" + name_ + " timeInState=" + String(timeInState_) + "\n";
     }
 
+    void AddFlag(int flag)
+    {
+        flags_ |= flag;
+    }
+
+    void RemoveFlag(int flag)
+    {
+        flags_ &= ~flag;
+    }
+
+    bool HasFlag(int flag)
+    {
+        return (flags_ & flag) != 0;
+    }
+
     String name_;
     StringHash nameHash_;
     float timeInState_;
-    int flag_;
+    unsigned flags_;
 };
 
 typedef SharedPtr<State> StatePtr;
 
-class FSM
+class FSM : public RefCounted
 {
 public:
     void AddState(StatePtr state)
@@ -86,39 +100,35 @@ public:
     {
         StatePtr newState = FindState(nameHash);
 
-        if (!newState)
+        if (newState.Null())
         {
-            Print("new-state not found " + nameHash.ToString());
+            URHO3D_LOGERROR("new-state not found " + nameHash.ToString());
             return false;
         }
 
-        if (currentState is newState) {
-            // Print("same state !!!");
-            if (!currentState.CanReEntered())
+        if (currentState_ == newState)
+        {
+            if (!currentState_->HasFlag(STATE_FLAG_RE_ENTER))
                 return false;
-            currentState.Exit(newState);
-            currentState.Enter(newState);
+            currentState_->Exit(newState.Get());
+            currentState_->Enter(newState.Get());
         }
 
-        State@ oldState = currentState;
-        if (oldState !is null)
-            oldState.Exit(newState);
+        StatePtr oldState = currentState_;
+        if (oldState.NotNull())
+            oldState->Exit(newState.Get());
 
-        if (newState !is null)
-            newState.Enter(oldState);
+        if (newState.NotNull())
+            newState->Enter(oldState.Get());
 
-        @currentState = @newState;
-
-        String oldStateName = "null";
-        if (oldState !is null)
-            oldStateName = oldState.name;
-
-        String newStateName = "null";
-        if (newState !is null)
-            newStateName = newState.name;
+        currentState_ = newState;
 
         if (d_log)
-            Print("FSM Change State " + oldStateName + " -> " + newStateName);
+        {
+            URHO3D_LOGINFO("FSM Change State " +
+                   (oldState.NotNull() ? oldState->name_ : "null") + " -> " +
+                   (newState.NotNull() ? newState->name_ : "null"));
+        }
 
         return true;
     }
@@ -131,5 +141,7 @@ public:
     HashMap<StringHash, StatePtr>     states_;
     StatePtr                          currentState_;
 };
+
+typedef SharedPtr<FSM> FSMPtr;
 
 }
