@@ -29,7 +29,7 @@
 
 #include "Game.h"
 #include "FSM.h"
-#include "GameObject.h"
+#include "Character.h"
 
 #include <Urho3D/DebugNew.h>
 

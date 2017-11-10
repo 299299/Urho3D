@@ -2,9 +2,8 @@
 #include <Urho3D/Math/StringHash.h>
 #include <Urho3D/Container/HashMap.h>
 #include <Urho3D/Container/Ptr.h>
+#include <Urho3D/Core/Object.h>
 #include <Urho3D/IO/Log.h>
-
-static bool d_log = false;
 
 namespace Urho3D
 {
@@ -12,11 +11,14 @@ class DebugRenderer;
 
 static const unsigned STATE_FLAG_RE_ENTER = (1 << 0);
 
-class State : public RefCounted
+class State : public Object
 {
+    URHO3D_OBJECT(State, Object);
+
 public:
-    State()
-    :timeInState_(0.0F)
+    State(Context* c)
+    :Object(c)
+    ,timeInState_(0.0F)
     ,flags_(0)
     {
     }
@@ -76,15 +78,23 @@ public:
 
 typedef SharedPtr<State> StatePtr;
 
-class FSM : public RefCounted
+class FSM : public Object
 {
+    URHO3D_OBJECT(FSM, Object);
+
 public:
+    FSM(Context* c)
+    :Object(c)
+    {
+
+    }
+
     void AddState(StatePtr state)
     {
         states_[state->nameHash_] = state;
     }
 
-    StatePtr FindState(const String& name)
+    StatePtr FindState(const char* name)
     {
         return FindState(StringHash(name));
     }
@@ -133,9 +143,15 @@ public:
         return true;
     }
 
-    bool ChangeState(const String& name)
+    bool ChangeState(const char* name)
     {
         return ChangeState(StringHash(name));
+    }
+
+    void DebugDraw(DebugRenderer* debug)
+    {
+        if (currentState_.NotNull())
+            currentState_->DebugDraw(debug);
     }
 
     HashMap<StringHash, StatePtr>     states_;

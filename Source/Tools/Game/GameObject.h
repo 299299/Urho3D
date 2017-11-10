@@ -31,17 +31,17 @@ public:
 
     void AddFlag(int flag)
     {
-        flags |= flag;
+        flags_ |= flag;
     }
 
     void RemoveFlag(int flag)
     {
-        flags &= ~flag;
+        flags_ &= ~flag;
     }
 
     bool HasFlag(int flag)
     {
-        return flags & flag != 0;
+        return (flags_ & flag) != 0;
     }
 
     virtual void Reset() {};
