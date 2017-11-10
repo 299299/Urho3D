@@ -30,6 +30,8 @@
 #include "Game.h"
 #include "FSM.h"
 #include "Character.h"
+#include "Motion.h"
+#include "AssetProcess.h"
 
 #include <Urho3D/DebugNew.h>
 

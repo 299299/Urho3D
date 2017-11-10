@@ -1,5 +1,6 @@
 #pragma once
 #include "Constants.h"
+#include "Util.h"
 #include <Urho3D/Math/StringHash.h>
 #include <Urho3D/Container/HashMap.h>
 #include <Urho3D/Container/Ptr.h>
@@ -56,21 +57,6 @@ public:
         return " name=" + name_ + " timeInState=" + String(timeInState_) + "\n";
     }
 
-    void AddFlag(int flag)
-    {
-        flags_ |= flag;
-    }
-
-    void RemoveFlag(int flag)
-    {
-        flags_ &= ~flag;
-    }
-
-    bool HasFlag(int flag)
-    {
-        return (flags_ & flag) != 0;
-    }
-
     String name_;
     StringHash nameHash_;
     float timeInState_;
@@ -119,7 +105,7 @@ public:
 
         if (currentState_ == newState)
         {
-            if (!currentState_->HasFlag(STATE_FLAG_RE_ENTER))
+            if (!HasFlag(currentState_->flags_, STATE_FLAG_RE_ENTER))
                 return false;
             currentState_->Exit(newState.Get());
             currentState_->Enter(newState.Get());

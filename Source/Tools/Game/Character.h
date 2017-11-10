@@ -14,6 +14,10 @@ public:
     Character(Context* context)
     :GameObject(context)
     ,fsm_(new FSM(context))
+    ,motion_startRotation_(0)
+    ,motion_deltaRotation_(0)
+    ,motion_translateEnabled_(true)
+    ,motion_rotateEnabled_(true)
     {
 
     }
@@ -100,6 +104,19 @@ public:
     Quaternion              initialRotation_;
 
     String                  lastAnimation_;
+
+    // ==============================================
+    //   DYNAMIC VALUES For Motion
+    // ==============================================
+    Vector3                 motion_startPosition_;
+    float                   motion_startRotation_;
+
+    float                   motion_deltaRotation_;
+    Vector3                 motion_deltaPosition_;
+    Vector3                 motion_velocity_;
+
+    bool                    motion_translateEnabled_;
+    bool                    motion_rotateEnabled_;
 };
 
 }

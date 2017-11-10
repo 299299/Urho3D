@@ -30,21 +30,6 @@ public:
         }
     }
 
-    void AddFlag(int flag)
-    {
-        flags_ |= flag;
-    }
-
-    void RemoveFlag(int flag)
-    {
-        flags_ &= ~flag;
-    }
-
-    bool HasFlag(int flag)
-    {
-        return (flags_ & flag) != 0;
-    }
-
     const String& GetName() const
     {
         return GetNode()->GetName();
