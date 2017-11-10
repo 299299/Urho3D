@@ -42,9 +42,6 @@ public:
 
     }
 
-
-
-
     String                  name_;
     String                  animationName_;
     StringHash              nameHash_;

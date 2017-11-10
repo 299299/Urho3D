@@ -1,6 +1,7 @@
 #pragma once
 #include <Urho3D/Scene/LogicComponent.h>
 #include <Urho3D/Scene/Node.h>
+#include <Urho3D/IO/Log.h>
 
 namespace Urho3D
 {
@@ -44,9 +45,14 @@ public:
         return (flags_ & flag) != 0;
     }
 
+    const String& GetName() const
+    {
+        return GetNode()->GetName();
+    }
+
     virtual void Reset() {};
 
-    virtual String GetDebugText() const { return GetNode()->GetName() + " duration:" + String(duration_); };
+    virtual String GetDebugText() const { return GetName() + " duration:" + String(duration_); };
 
     unsigned flags_;
     float duration_;

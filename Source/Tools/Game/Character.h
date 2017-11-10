@@ -66,6 +66,31 @@ public:
         GetNode()->SetWorldPosition(FilterPosition(position));
     }
 
+    void PlayAnimation(const String& animName,
+        int layer,
+        bool loop = false,
+        float blendTime = 0.1f,
+        float startTime = 0.0f,
+        float speed = 1.0f)
+    {
+        if (d_log)
+            URHO3D_LOGINFO(GetName() + " PlayAnimation " + animName +
+                " loop=" + String(loop) +
+                " blendTime=" + String(blendTime) +
+                " startTime=" + String(startTime) +
+                " speed=" + String(speed));
+
+        if (layer == 0 && lastAnimation_ == animName && loop)
+            return;
+
+        lastAnimation_ = animName;
+        AnimationController* ctrl = GetAnimCtl();
+        ctrl->StopLayer(layer, blendTime);
+        ctrl->PlayExclusive(animName, layer, loop, blendTime);
+        ctrl->SetSpeed(animName, speed);
+        ctrl->SetTime(animName, (speed < 0) ? ctrl->GetLength(animName) : startTime);
+    }
+
     FSMPtr                  fsm_;
     Node*                   renderNode_;
     AnimatedModel*          model_;
@@ -73,6 +98,8 @@ public:
 
     Vector3                 initialPostion_;
     Quaternion              initialRotation_;
+
+    String                  lastAnimation_;
 };
 
 }
