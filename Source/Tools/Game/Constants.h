@@ -47,7 +47,7 @@ static const char* R_CALF = "Bip01_R_Calf";
 
 static const float FRAME_PER_SEC = 30.0f;
 static const float SEC_PER_FRAME = 1.0f/FRAME_PER_SEC;
-static const int   PROCESS_TIME_PER_FRAME = 60; // ms
+static const unsigned  PROCESS_TIME_PER_FRAME = 60; // ms
 static const float BONE_SCALE = 100.0f;
 
 }

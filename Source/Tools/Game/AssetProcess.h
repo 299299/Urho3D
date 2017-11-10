@@ -37,7 +37,7 @@ enum RootMotionFlag
 };
 
 
-class MotionRig
+class MotionRig : public RefCounted
 {
 public:
     MotionRig(const char* rigName, Scene* processScene)
@@ -466,6 +466,6 @@ public:
     Node* alignNode_;
 };
 
-
+typedef SharedPtr<MotionRig> MotionRigPtr;
 
 }

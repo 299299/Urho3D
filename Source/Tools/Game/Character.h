@@ -108,7 +108,7 @@ public:
             return 0;
 
         dt *= absSpeed;
-        if (looped_ || speed < 0)
+        if (motion->looped_ || speed < 0)
         {
             Vector4 motionOut = Vector4(0, 0, 0, 0);
             motion->GetMotion(localTime, dt, motion->looped_, motionOut);
@@ -153,7 +153,7 @@ public:
     {
         Vector4 motionOut = motion->GetKey(t);
         Vector3 v_motion(motionOut.x_, motionOut.y_, motionOut.z_);
-        if (looped_)
+        if (motion->looped_)
             return GetNode()->GetWorldRotation() * v_motion + GetNode()->GetWorldPosition() + motion_deltaPosition_;
         else
             return Quaternion(0, motion_startRotation_ + motion_deltaRotation_, 0) * v_motion + motion_startPosition_ + motion_deltaPosition_;
@@ -162,10 +162,26 @@ public:
     float GetFutureRotation(Motion* motion, float t)
     {
         Vector4 motionOut = motion->GetKey(t);
-        if (looped_)
+        if (motion->looped_)
             return ClampAngle(GetNode()->GetWorldRotation().EulerAngles().y_ + motion_deltaRotation_ + motionOut.w_);
         else
             return ClampAngle(motion_startRotation_ + motion_deltaRotation_ + motionOut.w_);
+    }
+
+    void DebugDraw(Motion* motion, DebugRenderer* debug)
+    {
+        Vector4 tFinnal = motion->GetKey(motion->endTime_);
+        Vector3 tLocal(tFinnal.x_, tFinnal.y_, tFinnal.z_);
+        if (motion->looped_)
+        {
+            debug->AddLine(GetNode()->GetWorldRotation() * tLocal + GetNode()->GetWorldPosition(), GetNode()->GetWorldPosition(), Color(0.5f, 0.5f, 0.7f), false);
+        }
+        else
+        {
+            Vector3 tMotionEnd = Quaternion(0, motion_startRotation_ + motion_deltaRotation_, 0) * tLocal;
+            debug->AddLine(tMotionEnd + motion_startPosition_ ,  motion_startPosition_ , Color(0.5f, 0.5f, 0.7f), false);
+            DebugDrawDirection(debug, GetNode()->GetWorldPosition(), motion_startRotation_ + motion_deltaRotation_ + tFinnal.w_, Color::RED, 2.0);
+        }
     }
 
     FSMPtr                  fsm_;
