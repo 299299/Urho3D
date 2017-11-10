@@ -2,6 +2,7 @@
 #include "GameObject.h"
 #include "FSM.h"
 #include "Util.h"
+#include "Motion.h"
 #include <Urho3D/Graphics/AnimatedModel.h>
 #include <Urho3D/Graphics/AnimationController.h>
 #include <Urho3D/Graphics/DebugRenderer.h>
@@ -93,6 +94,78 @@ public:
         ctrl->PlayExclusive(animName, layer, loop, blendTime);
         ctrl->SetSpeed(animName, speed);
         ctrl->SetTime(animName, (speed < 0) ? ctrl->GetLength(animName) : startTime);
+    }
+
+    int Move(Motion* motion, float dt)
+    {
+        AnimationController* ctrl = GetAnimCtl();
+        Node* _node = GetNode();
+        float localTime = ctrl->GetTime(motion->animationName_);
+        float speed = ctrl->GetSpeed(motion->animationName_);
+        float absSpeed = Abs(speed);
+
+        if (absSpeed < 0.001F)
+            return 0;
+
+        dt *= absSpeed;
+        if (looped_ || speed < 0)
+        {
+            Vector4 motionOut = Vector4(0, 0, 0, 0);
+            motion->GetMotion(localTime, dt, motion->looped_, motionOut);
+            if (!motion->looped_)
+            {
+                if (localTime < SEC_PER_FRAME)
+                    motionOut = Vector4(0, 0, 0, 0);
+            }
+
+            if (motion_rotateEnabled_)
+                _node->Yaw(motionOut.w_);
+
+            if (motion_translateEnabled_)
+            {
+                Vector3 tLocal(motionOut.x_, motionOut.y_, motionOut.z_);
+                // tLocal = tLocal * ctrl.GetWeight(animationName_);
+                Vector3 tWorld = _node->GetWorldRotation() * tLocal + _node->GetWorldPosition() + motion_velocity_ * dt;
+                MoveTo(tWorld, dt);
+            }
+
+            return (speed < 0 && localTime < 0.001F) ? 1 : 0;
+        }
+        else
+        {
+            Vector4 motionOut = motion->GetKey(localTime);
+            if (motion_rotateEnabled_)
+                _node->SetWorldRotation(Quaternion(0, motion_startRotation_ + motionOut.w_ + motion_deltaRotation_, 0));
+
+            if (motion_translateEnabled_)
+            {
+                motion_deltaPosition_ += motion_velocity_ * dt;
+                Vector3 tWorld = Quaternion(0, motion_startRotation_ + motion_deltaRotation_, 0) * Vector3(motionOut.x_, motionOut.y_, motionOut.z_) + motion_startPosition_ + motion_deltaPosition_;
+                MoveTo(tWorld, dt);
+            }
+
+            bool bFinished = (speed > 0) ? localTime >= motion->endTime_ : (localTime < 0.001F);
+            return bFinished ? 1 : 0;
+        }
+    }
+
+    Vector3 GetFuturePosition(Motion* motion, float t)
+    {
+        Vector4 motionOut = motion->GetKey(t);
+        Vector3 v_motion(motionOut.x_, motionOut.y_, motionOut.z_);
+        if (looped_)
+            return GetNode()->GetWorldRotation() * v_motion + GetNode()->GetWorldPosition() + motion_deltaPosition_;
+        else
+            return Quaternion(0, motion_startRotation_ + motion_deltaRotation_, 0) * v_motion + motion_startPosition_ + motion_deltaPosition_;
+    }
+
+    float GetFutureRotation(Motion* motion, float t)
+    {
+        Vector4 motionOut = motion->GetKey(t);
+        if (looped_)
+            return ClampAngle(GetNode()->GetWorldRotation().EulerAngles().y_ + motion_deltaRotation_ + motionOut.w_);
+        else
+            return ClampAngle(motion_startRotation_ + motion_deltaRotation_ + motionOut.w_);
     }
 
     FSMPtr                  fsm_;

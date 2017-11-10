@@ -5,6 +5,8 @@
 #include <Urho3D/Scene/Scene.h>
 #include <Urho3D/Graphics/Skeleton.h>
 #include <Urho3D/Graphics/Model.h>
+#include <Urho3D/Graphics/AnimatedModel.h>
+#include <Urho3D/Graphics/AnimationState.h>
 
 namespace Urho3D
 {

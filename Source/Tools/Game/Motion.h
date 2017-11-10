@@ -1,7 +1,9 @@
 #pragma once
+#include "AssetProcess.h"
 #include <Urho3D/Graphics/Animation.h>
 #include <Urho3D/IO/Log.h>
-#include "Character.h"
+#include <Urho3D/Core/Timer.h>
+#include <Urho3D/Resource/ResourceCache.h>
 
 namespace Urho3D
 {
@@ -70,26 +72,7 @@ public:
         return k1.Lerp(k2, a);
     }
 
-    Vector3 GetFuturePosition(Character* mover, float t)
-    {
-        Vector4 motionOut = GetKey(t);
-        Node* _node = mover->GetNode();
-        Vector3 v_motion(motionOut.x_, motionOut.y_, motionOut.z_);
-        if (looped_)
-            return _node->GetWorldRotation() * v_motion + _node->GetWorldPosition() + mover->motion_deltaPosition_;
-        else
-            return Quaternion(0, mover->motion_startRotation_ + mover->motion_deltaRotation_, 0) * v_motion + mover->motion_startPosition_ + mover->motion_deltaPosition_;
-    }
-
-    float GetFutureRotation(Character* mover, float t)
-    {
-        if (looped_)
-            return ClampAngle(mover->GetNode()->GetWorldRotation().EulerAngles().y_ + mover->motion_deltaRotation_ + GetKey(t).w_);
-        else
-            return ClampAngle(mover->motion_startRotation_ + mover->motion_deltaRotation_ + GetKey(t).w_);
-    }
-
-    void DebugDraw(DebugRenderer* debug, Character* mover)
+    void DebugDraw(DebugRenderer* debug)
     {
         Node* _node = mover->GetNode();
         Vector4 tFinnal = GetKey(endTime_);
@@ -104,6 +87,47 @@ public:
             Vector3 tMotionEnd = Quaternion(0, mover->motion_startRotation_ + mover->motion_deltaRotation_, 0) * tLocal;
             debug->AddLine(tMotionEnd + mover->motion_startPosition_ ,  mover->motion_startPosition_ , Color(0.5f, 0.5f, 0.7f), false);
             DebugDrawDirection(debug, _node->GetWorldPosition(), mover->motion_startRotation_ + mover->motion_deltaRotation_ + tFinnal.w_, Color::RED, 2.0);
+        }
+    }
+
+    Vector3 GetStartPos()
+    {
+        return Vector3(startFromOrigin_.x_, startFromOrigin_.y_, startFromOrigin_.z_);
+    }
+
+    float GetStartRot()
+    {
+        return -rotateAngle_;
+    }
+
+    void Process(MotionRig* rig)
+    {
+        if (processed)
+            return;
+
+        unsigned startTime = Time::GetSystemTime();
+        animationName_ = GetAnimationName(name_);
+        ResourceCache* cache = GetSubsystem<ResourceCache>();
+        animation_ = cache->GetResource("Animation", animationName_);
+        if (!animation_)
+            return;
+
+        rotateAngle_ = rig->ProcessAnimation(animationName_, motionFlag_, allowMotion_, rotateAngle_, motionKeys_, startFromOrigin_);
+        SetEndFrame(endFrame_);
+
+        if (!motionKeys_.Empty())
+        {
+            Vector4 v = motionKeys_[0];
+            Vector4 diff = motionKeys_[endFrame_ - 1] - motionKeys_[0];
+            endDistance_ = Vector3(diff.x_, diff.y_, diff.z_).length;
+        }
+
+        processed = true;
+
+        if (d_log)
+        {
+            unsigned endTime = Time::GetSystemTime();
+            URHO3D_LOGINFO("Motion " + name_ + " endDistance="  + String(endDistance_) + " startFromOrigin=" + startFromOrigin_.ToString()  + " timeCost=" + String(endTime - startTime) + " ms");
         }
     }
 
@@ -122,8 +146,6 @@ public:
     int                     endFrame_;
     int                     motionFlag_;
     int                     allowMotion_;
-
-    float                   maxHeight_;
 
     float                   rotateAngle_;
     bool                    processed_;
