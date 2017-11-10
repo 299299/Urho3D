@@ -35,6 +35,15 @@ static const char* TITLE = "AssetProcess";
 static const char* TRANSLATE_BONE_NAME = "Bip01_$AssimpFbx$_Translation";
 static const char* ROTATE_BONE_NAME = "Bip01_$AssimpFbx$_Rotation";
 static const char* SCALE_BONE_NAME = "Bip01_$AssimpFbx$_Scaling";
+static const char* HEAD = "Bip01_Head";
+static const char* L_HAND = "Bip01_L_Hand";
+static const char* R_HAND = "Bip01_R_Hand";
+static const char* L_FOOT = "Bip01_L_Foot";
+static const char* R_FOOT = "Bip01_R_Foot";
+static const char* L_ARM = "Bip01_L_Forearm";
+static const char* R_ARM = "Bip01_R_Forearm";
+static const char* L_CALF = "Bip01_L_Calf";
+static const char* R_CALF = "Bip01_R_Calf";
 
 static const float FRAME_PER_SEC = 30.0f;
 static const float SEC_PER_FRAME = 1.0f/FRAME_PER_SEC;
