@@ -182,7 +182,6 @@ public:
     ,processedAnimations_(0)
     ,state_(kMotionLoadingStart)
     {
-
     }
 
     void AddMotion(MotionPtr motion)
@@ -280,6 +279,17 @@ public:
             }
         }
         return false;
+    }
+
+    MotionPtr CreateMotion(const String& name,
+        int rigIndex,
+        unsigned motionFlag = kMotion_XZR,
+        unsigned allowMotion = kMotion_ALL,
+        int endFrame = -1,
+        bool loop = false,
+        float rotateAngle = 361)
+    {
+
     }
 
     void AddRigs()
