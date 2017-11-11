@@ -1,5 +1,6 @@
 #pragma once
 #include <Urho3D/Math/Vector3.h>
+#include <Urho3D/Math/StringHash.h>
 
 namespace Urho3D
 {
@@ -53,4 +54,10 @@ static const float BONE_SCALE = 100.0f;
 
 // State Flags
 static const unsigned STATE_FLAG_RE_ENTER = (1 << 0);
+
+// UI
+static const char* UI_FONT = "Fonts/GAEN.ttf";
+static const unsigned UI_FONT_SIZE = 40;
+
 }
+

@@ -19,6 +19,7 @@ public:
     ,motion_deltaRotation_(0)
     ,motion_translateEnabled_(true)
     ,motion_rotateEnabled_(true)
+    ,animationPickIndex_(0)
     {
 
     }
@@ -196,6 +197,12 @@ public:
         }
     }
 
+    float GetAngle() const
+    {
+        Vector3 dir = GetNode()->GetWorldRotation() * Vector3(0, 0, 1.0F);
+        return Atan2(dir.x_, dir.z_);
+    }
+
     FSMPtr                  fsm_;
     Node*                   renderNode_;
     AnimatedModel*          model_;
@@ -205,6 +212,8 @@ public:
     Quaternion              initialRotation_;
 
     String                  lastAnimation_;
+
+    int                     animationPickIndex_;
 
     // ==============================================
     //   DYNAMIC VALUES For Motion
