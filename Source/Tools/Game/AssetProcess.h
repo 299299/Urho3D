@@ -44,6 +44,17 @@ public:
     :processScene_(processScene)
     ,rigName_(rigName)
     {
+
+    }
+
+    ~MotionRig()
+    {
+        processNode_->Remove();
+        alignNode_->Remove();
+    }
+
+    void Process()
+    {
         processNode_ = processScene_->CreateChild(rigName_ + "_Character");
         processNode_->SetWorldRotation(Quaternion(0, 180, 0));
 
@@ -70,12 +81,6 @@ public:
         am2->SetModel(am->GetModel());
 
         URHO3D_LOGINFO(rigName_ + " pelvisRightAxis=" + pelvisRightAxis_.ToString() + " pelvisOrign=" + pelvisOrign_.ToString());
-    }
-
-    ~MotionRig()
-    {
-        processNode_->Remove();
-        alignNode_->Remove();
     }
 
     Vector3 GetProjectedAxis(Node* node, const Vector3& axis) const

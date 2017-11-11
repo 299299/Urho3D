@@ -11,8 +11,6 @@ namespace Urho3D
 {
 class DebugRenderer;
 
-static const unsigned STATE_FLAG_RE_ENTER = (1 << 0);
-
 class State : public Object
 {
     URHO3D_OBJECT(State, Object);

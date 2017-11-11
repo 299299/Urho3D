@@ -96,6 +96,18 @@ public:
         ctrl->SetTime(animName, (speed < 0) ? ctrl->GetLength(animName) : startTime);
     }
 
+    void PlayMotion(Motion* m, float localTime = 0.0F, float blendTime = 0.1F, float speed = 1.0F)
+    {
+        PlayAnimation(m->animationName_, 0, m->looped_, blendTime, localTime, speed);
+        motion_startPosition_ = GetNode()->GetWorldPosition();
+        motion_startRotation_ = GetNode()->GetWorldRotation().EulerAngles().y_;
+        motion_deltaRotation_ = 0.0F;
+        motion_deltaPosition_ = Vector3::ZERO;
+        motion_velocity_ = Vector3::ZERO;
+        motion_translateEnabled_ = true;
+        motion_rotateEnabled_ = true;
+    }
+
     int Move(Motion* motion, float dt)
     {
         AnimationController* ctrl = GetAnimCtl();
@@ -168,7 +180,7 @@ public:
             return ClampAngle(motion_startRotation_ + motion_deltaRotation_ + motionOut.w_);
     }
 
-    void DebugDraw(Motion* motion, DebugRenderer* debug)
+    void DebugDraw(DebugRenderer* debug, Motion* motion)
     {
         Vector4 tFinnal = motion->GetKey(motion->endTime_);
         Vector3 tLocal(tFinnal.x_, tFinnal.y_, tFinnal.z_);

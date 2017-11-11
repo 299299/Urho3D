@@ -31,6 +31,7 @@ static const float COLLISION_SAFE_DIST = COLLISION_RADIUS * 1.85f;
 
 static const Vector3 WORLD_HALF_SIZE(1000, 0, 1000);
 
+// Asset processing
 static const char* TITLE = "AssetProcess";
 static const char* TRANSLATE_BONE_NAME = "Bip01_$AssimpFbx$_Translation";
 static const char* ROTATE_BONE_NAME = "Bip01_$AssimpFbx$_Rotation";
@@ -50,4 +51,6 @@ static const float SEC_PER_FRAME = 1.0f/FRAME_PER_SEC;
 static const unsigned  PROCESS_TIME_PER_FRAME = 60; // ms
 static const float BONE_SCALE = 100.0f;
 
+// State Flags
+static const unsigned STATE_FLAG_RE_ENTER = (1 << 0);
 }

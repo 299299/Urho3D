@@ -14,9 +14,10 @@ class Motion : public Object
     URHO3D_OBJECT(Motion, Object);
 
 public:
-    Motion(Context* c)
+    Motion(Context* c, const String& name, int rigIndex)
     :Object(c)
-    ,rigIndex_(0)
+    ,name_(name)
+    ,rigIndex_(rigIndex)
     {
     }
 
@@ -123,7 +124,6 @@ public:
 
     String                  name_;
     String                  animationName_;
-    StringHash              nameHash_;
 
     Animation*              animation_;
     PODVector<Vector4>      motionKeys_;
@@ -143,21 +143,20 @@ public:
     int                     rigIndex_;
 };
 
-class AttackMotion  : public Motion
+class AttackMotion
 {
 public:
     // ==============================================
     //   ATTACK VALUES
     // ==============================================
-
+    Motion*                 motion_;
     float                   impactTime_;
     float                   impactDist_;
     Vector3                 impactPosition_;
     int                     type_;
     String                  boneName_;
 
-    AttackMotion(Context* c, const String& name, int impactFrame, int _type, const String& bName)
-    :Motion(c)
+    AttackMotion(const String& name, int impactFrame, int _type, const String& bName)
     {
 
     }
@@ -168,6 +167,7 @@ typedef SharedPtr<Motion> MotionPtr;
 enum MotionLoadingState
 {
     kMotionLoadingStart = 0,
+    kMotionLoadingRigs,
     kMotionLoadingAnimations,
     kMotionLoadingMotions,
     kMotionLoadingFinished
@@ -180,13 +180,15 @@ public:
     MotionManager(Context* c)
     :Object(c)
     ,processedAnimations_(0)
+    ,processedRigs_(0)
     ,state_(kMotionLoadingStart)
     {
+        c->RegisterSubsystem(this);
     }
 
     void AddMotion(MotionPtr motion)
     {
-        motions_[motion->nameHash_] = motion;
+        motions_[StringHash(motion->name_)] = motion;
         unprocessedMotions_.Push(motion);
     }
 
@@ -206,8 +208,9 @@ public:
     {
         assetProcessTime_ = Time::GetSystemTime();
         processScene_ = new Scene(context_);
+        AddRigs();
         AddMotions();
-        state_ = kMotionLoadingMotions;
+        state_ = kMotionLoadingRigs;
     }
 
     void Stop()
@@ -235,7 +238,26 @@ public:
         if (state_ == kMotionLoadingFinished)
             return true;
 
-        if (state_ == kMotionLoadingMotions)
+        if (state_ == kMotionLoadingRigs)
+        {
+            ResourceCache* cache = GetSubsystem<ResourceCache>();
+            unsigned t = Time::GetSystemTime();
+            for (unsigned i=processedRigs_; i<rigs_.Size(); ++i)
+            {
+                rigs_[i]->Process();
+                ++processedRigs_;
+                unsigned time_diff = Time::GetSystemTime() - t;
+                if (time_diff >= PROCESS_TIME_PER_FRAME)
+                    break;
+            }
+
+            URHO3D_LOGINFO("MotionManager Process this frame time=" +
+                String(Time::GetSystemTime() - t) + " ms " + " processedRigs_=" + String(processedRigs_));
+
+            if (processedRigs_ >= rigs_.Size())
+                state_ = kMotionLoadingMotions;
+        }
+        else if (state_ == kMotionLoadingMotions)
         {
             unsigned t = Time::GetSystemTime();
             int processedMotions = 0;
@@ -289,7 +311,14 @@ public:
         bool loop = false,
         float rotateAngle = 361)
     {
-
+        MotionPtr ret(new Motion(context_, name, rigIndex));
+        ret->motionFlag_ = motionFlag;
+        ret->allowMotion_ = allowMotion;
+        ret->endFrame_ = endFrame;
+        ret->looped_ = loop;
+        ret->rotateAngle_ = rotateAngle;
+        AddMotion(ret);
+        return ret;
     }
 
     void AddRigs()
@@ -313,8 +342,8 @@ public:
     SharedPtr<Scene>                   processScene_;
 
     unsigned                           assetProcessTime_;
-    unsigned                           processedMotions_;
     unsigned                           processedAnimations_;
+    unsigned                           processedRigs_;
     int                                state_;
 };
 
