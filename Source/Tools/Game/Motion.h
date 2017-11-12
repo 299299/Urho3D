@@ -181,6 +181,7 @@ public:
     :Object(c)
     ,processedAnimations_(0)
     ,processedRigs_(0)
+    ,processedMotions_(0)
     ,state_(kMotionLoadingStart)
     {
         c->RegisterSubsystem(this);
@@ -260,13 +261,12 @@ public:
         else if (state_ == kMotionLoadingMotions)
         {
             unsigned t = Time::GetSystemTime();
-            int processedMotions = 0;
             while(!unprocessedMotions_.Empty())
             {
                 MotionPtr m = unprocessedMotions_.Front();
                 m->Process(rigs_[m->rigIndex_].Get());
                 unprocessedMotions_.PopFront();
-                ++processedMotions;
+                ++processedMotions_;
 
                 unsigned time_diff = Time::GetSystemTime() - t;
                 if (time_diff >= PROCESS_TIME_PER_FRAME)
@@ -274,7 +274,7 @@ public:
             }
 
             URHO3D_LOGINFO("MotionManager Process this frame time=" +
-                String(Time::GetSystemTime() - t) + " ms " + " processedMotions=" + String(processedMotions));
+                String(Time::GetSystemTime() - t) + " ms " + " processedMotions_=" + String(processedMotions_));
             if (unprocessedMotions_.Empty())
                 state_ = kMotionLoadingAnimations;
         }
@@ -344,6 +344,7 @@ public:
     unsigned                           assetProcessTime_;
     unsigned                           processedAnimations_;
     unsigned                           processedRigs_;
+    unsigned                           processedMotions_;
     int                                state_;
 };
 

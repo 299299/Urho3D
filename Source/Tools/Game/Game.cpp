@@ -33,6 +33,7 @@
 #include "Motion.h"
 #include "AssetProcess.h"
 #include "CharacterState.h"
+#include "GameState.h"
 
 #include <Urho3D/DebugNew.h>
 

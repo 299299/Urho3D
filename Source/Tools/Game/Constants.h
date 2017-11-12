@@ -58,6 +58,13 @@ static const unsigned STATE_FLAG_RE_ENTER = (1 << 0);
 // UI
 static const char* UI_FONT = "Fonts/GAEN.ttf";
 static const unsigned UI_FONT_SIZE = 40;
+static const char* UI_LOADING_TAG = "TAG_LOADING";
+
+// Load
+static const char* PRELOAD_SCENE_NAME = "Scenes/animation.xml";
+static const char* GAME_SCENE_NAME = "Scenes/1.xml";
+
+static const char* CAMERA_NODE_NAME = "Camera_Node";
 
 }
 

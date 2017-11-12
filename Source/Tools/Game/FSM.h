@@ -139,6 +139,12 @@ public:
             currentState_->DebugDraw(debug);
     }
 
+    void Update(float dt)
+    {
+        if (currentState_.NotNull())
+            currentState_->Update(dt);
+    }
+
     HashMap<StringHash, StatePtr>     states_;
     StatePtr                          currentState_;
 };

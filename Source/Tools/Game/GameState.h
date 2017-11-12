@@ -1,8 +1,16 @@
 #pragma once
 #include "FSM.h"
 #include "Constants.h"
+#include "Motion.h"
 #include <Urho3D/Scene/Scene.h>
+#include <Urho3D/UI/UI.h>
 #include <Urho3D/UI/Sprite.h>
+#include <Urho3D/UI/Font.h>
+#include <Urho3D/UI/Text.h>
+#include <Urho3D/Graphics/Graphics.h>
+#include <Urho3D/Graphics/Texture2D.h>
+#include <Urho3D/Scene/ValueAnimation.h>
+#include <Urho3D/Scene/SceneEvents.h>
 
 namespace Urho3D
 {
@@ -22,18 +30,16 @@ public:
     {
 
     }
-}
+};
 
 class LoadingState : public GameState
 {
 public:
     int                 state_;
-    int                 numLoadedResources_;
     SharedPtr<Scene>    preloadScene_;
 
     LoadingState(Context* c)
     :GameState(c)
-    ,numLoadedResources_(0)
     {
         SetName("LoadingState");
     }
@@ -45,7 +51,7 @@ public:
         Graphics* graphics = GetSubsystem<Graphics>();
 
         Texture2D* logoTexture = cache->GetResource<Texture2D>("Textures/ulogo.jpg");
-        SharedPtr<Sprite> logoSprite(new Sprite(context_));
+        SharedPtr<Sprite> logoSprite = ui->GetRoot()->CreateChild<Sprite>();
         logoSprite->SetTexture(logoTexture);
         unsigned textureWidth = logoTexture->GetWidth();
         unsigned textureHeight = logoTexture->GetHeight();
@@ -56,20 +62,19 @@ public:
         logoSprite->SetPosition(graphics->GetWidth() - textureWidth/2, 0);
         logoSprite->SetOpacity(0.75F);
         logoSprite->SetPriority(-100);
-        logoSprite->AddTag("TAG_LOADING");
-        ui->AddChild(logoSprite);
+        logoSprite->AddTag(UI_LOADING_TAG);
 
-        SharedPtr<Text> text(new Text(context_));
-        text->SetFont(cache.GetResource("Font", UI_FONT), UI_FONT_SIZE);
+        SharedPtr<Text> text = ui->GetRoot()->CreateChild<Text>();
+        text->SetName("loading_text");
+        text->SetFont(cache->GetResource<Font>(UI_FONT), UI_FONT_SIZE);
         text->SetAlignment(HA_LEFT, VA_BOTTOM);
         text->SetPosition(2, 0);
-        text->color = Color(1, 1, 1);
+        text->SetColor(Color::WHITE);
         text->SetTextEffect(TE_STROKE);
-        text->AddTag("TAG_LOADING");
-        ui->AddChild(text);
+        text->AddTag(UI_LOADING_TAG);
 
         Texture2D* loadingTexture = cache->GetResource<Texture2D>("Textures/Loading.tga");
-        SharedPtr<Sprite> loadingSprite(new Sprite(context_));
+        SharedPtr<Sprite> loadingSprite = ui->GetRoot()->CreateChild<Sprite>();
         loadingSprite->SetTexture(loadingTexture);
         textureWidth = loadingTexture->GetWidth();
         textureHeight = loadingTexture->GetHeight();
@@ -80,80 +85,290 @@ public:
         loadingSprite->AddTag("TAG_LOADING");
         float alphaDuration = 1.0F;
         SharedPtr<ValueAnimation> alphaAnimation(new ValueAnimation(context_));
-        alphaAnimation.SetKeyFrame(0.0F, Variant(0.0F));
-        alphaAnimation.SetKeyFrame(alphaDuration, Variant(1.0F));
-        alphaAnimation.SetKeyFrame(alphaDuration * 2, Variant(0.0F));
+        alphaAnimation->SetKeyFrame(0.0F, Variant(0.0F));
+        alphaAnimation->SetKeyFrame(alphaDuration, Variant(1.0F));
+        alphaAnimation->SetKeyFrame(alphaDuration * 2, Variant(0.0F));
         loadingSprite->SetAttributeAnimation("Opacity", alphaAnimation);
-        ui->AddChild(loadingSprite);
+        ui->GetRoot()->AddChild(loadingSprite);
     }
 
-    void Enter(State@ lastState)
+    virtual void Enter(State* lastState) override
     {
         State::Enter(lastState);
-        if (!engine.headless)
-            CreateLoadingUI();
+        CreateLoadingUI();
         ChangeSubState(LOADING_RESOURCES);
     }
 
-    void Exit(State@ nextState)
+    virtual void Exit(State* nextState) override
     {
         State::Exit(nextState);
-        Array<UIElement@>@ elements = ui.root.GetChildrenWithTag("TAG_LOADING");
-        for (uint i = 0; i < elements.length; ++i)
-            elements[i].Remove();
+        UI* ui = GetSubsystem<UI>();
+        PODVector<UIElement*> elements = ui->GetRoot()->GetChildrenWithTag("TAG_LOADING");
+        for (unsigned i = 0; i < elements.Size(); ++i)
+            elements[i]->Remove();
     }
 
-    void Update(float dt)
+    virtual void Update(float dt) override
     {
-        if (state == LOADING_RESOURCES)
+        if (state_ == LOADING_RESOURCES)
         {
 
         }
-        else if (state == LOADING_MOTIONS)
+        else if (state_ == LOADING_MOTIONS)
         {
-            Text@ text = ui.root.GetChild("loading_text");
-            if (text !is null)
-                text.text = "Loading Motions, loaded = " + gMotionMgr.processedMotions;
-
-            if (d_log)
-                Print("============================== Motion Loading start ==============================");
-
-            if (gMotionMgr.Update(dt))
+            MotionManager* mgr = GetSubsystem<MotionManager>();
+            UI* ui = GetSubsystem<UI>();
+            Text* text = ui->GetRoot()->GetChildStaticCast<Text>(StringHash("loading_text"));
+            if (text)
             {
-                gMotionMgr.Finish();
-                ChangeSubState(LOADING_FINISHED);
-                if (text !is null)
-                    text.text = "Loading Scene Resources";
+                text->SetText(String("Loading Motions, loaded = ") + String(mgr->processedMotions_));
             }
 
             if (d_log)
-                Print("============================== Motion Loading end ==============================");
+                URHO3D_LOGINFO("============================== Motion Loading start ==============================");
+
+            if (mgr->Update(dt))
+            {
+                mgr->Finish();
+                ChangeSubState(LOADING_FINISHED);
+                if (text)
+                    text->SetText("Loading Scene Resources");
+            }
+
+            if (d_log)
+                URHO3D_LOGINFO("============================== Motion Loading end ==============================");
         }
-        else if (state == LOADING_FINISHED)
+        else if (state_ == LOADING_FINISHED)
         {
-            if (preloadScene !is null)
-                preloadScene.Remove();
-            preloadScene = null;
-            gGame.ChangeState("TestGameState");
+            if (preloadScene_.NotNull())
+                preloadScene_.Reset();
+            // gGame.ChangeState("TestGameState");
         }
     }
 
     void ChangeSubState(int newState)
     {
-        if (state == newState)
+        if (state_ == newState)
             return;
 
-        Print("LoadingState ChangeSubState from " + state + " to " + newState);
-        state = newState;
+        URHO3D_LOGINFO("LoadingState ChangeSubState from " + String(state_) + " to " + String(newState));
+        state_ = newState;
 
         if (newState == LOADING_RESOURCES)
         {
-            preloadScene = Scene();
-            preloadScene.LoadAsyncXML(cache.GetFile("Scenes/animation.xml"), LOAD_RESOURCES_ONLY);
+            preloadScene_ = new Scene(context_);
+            SubscribeToEvent(preloadScene_, E_ASYNCLOADPROGRESS, URHO3D_HANDLER(LoadingState, HandleAsyncLoadProgress));
+            SubscribeToEvent(preloadScene_, E_ASYNCLOADFINISHED, URHO3D_HANDLER(LoadingState, HandleAsyncLoadFinished));
+
+            SharedPtr<File> file = GetSubsystem<ResourceCache>()->GetFile(PRELOAD_SCENE_NAME);
+            preloadScene_->LoadAsyncXML(file, LOAD_RESOURCES_ONLY);
         }
         else if (newState == LOADING_MOTIONS)
-            gMotionMgr.Start();
+        {
+            MotionManager* mgr = GetSubsystem<MotionManager>();
+            mgr->Start();
+        }
     }
-}
+
+    void HandleAsyncLoadProgress(StringHash eventType, VariantMap& eventData)
+    {
+        UI* ui = GetSubsystem<UI>();
+        Text* text = ui->GetRoot()->GetChildStaticCast<Text>(StringHash("loading_text"));
+        if (text)
+        {
+            using namespace AsyncLoadProgress;
+            float progress = eventData[P_PROGRESS].GetFloat();
+            unsigned loadedResources = eventData[P_LOADEDRESOURCES].GetUInt();
+            unsigned totalResources = eventData[P_TOTALRESOURCES].GetUInt();
+            text->SetText(String("Loading scene ressources progress=" + String(progress) +
+                " resources:" + String(loadedResources) + "/" + String(totalResources)));
+        }
+    }
+
+    void HandleAsyncLoadFinished(StringHash eventType, VariantMap& eventData)
+    {
+        if (state_ == LOADING_RESOURCES)
+            ChangeSubState(LOADING_MOTIONS);
+    }
+};
+
+class InGameState : public GameState
+{
+public:
+    SharedPtr<Scene>       scene_;
+    SharedPtr<Fader>       fader_;
+
+    int                    state_ = -1;
+
+    InGameState(Context* c)
+    :GameState(c)
+    ,state_(-1)
+    ,fadeTime_(0.0F)
+    ,fadeInDuration_(2.0F)
+    {
+        SetName("InGameState");
+    }
+
+    virtual void Enter(State* lastState) override
+    {
+        State::Enter(lastState);
+        CreateScene();
+        SetupViewport();
+        CreateUI();
+        ChangeSubState(GAME_FADING);
+    }
+
+    void CreateUI()
+    {
+        ResourceCache* cache = GetSubsystem<ResourceCache>();
+        Graphics* g = GetSubsystem<Graphics>();
+        UI* ui = GetSubsystem<UI>();
+        fader_ = new Fader(context_);
+
+        int height = g->GetHeight() / 22;
+        if (height > 64)
+            height = 64;
+        Text* messageText = ui->GetRoot()->CreateChild<Text>("message");
+        messageText->SetFont(cache->GetResource<Font>(UI_FONT), UI_FONT_SIZE);
+        messageText.SetAlignment(HA_CENTER, VA_CENTER);
+        messageText.SetPosition(0, -height * 2 + 100);
+        messageText->SetColor(Color::RED);
+        messageText->SetVisible(false);
+
+        Text* statusText = ui->GetRoot()->CreateChild<Text>("status");;
+        statusText->SetFont(cache->GetResource<Font>(UI_FONT), UI_FONT_SIZE);
+        statusText->SetAlignment(HA_LEFT, VA_TOP);
+        statusText->SetPosition(0, 0);
+        statusText->SetColor(Color(1, 1, 0));
+        statusText->SetVisible(true);
+    }
+
+    virtual void Update(float dt) override
+    {
+        switch (state)
+        {
+        case GAME_FADING:
+            {
+                if (fader_->Update(dt) == 1)
+                {
+                    ChangeSubState(GAME_RUNNING);
+                }
+            }
+            break;
+        }
+        GameState::Update(dt);
+    }
+
+    void ChangeSubState(int newState)
+    {
+        if (state_ == newState)
+            return;
+
+        int oldState = state;
+        URHO3D_LOGINFO("InGameState ChangeSubState from " + String(oldState) + " to " + String(newState));
+        state_ = newState;
+        timeInState_ = 0.0F;
+
+        switch (newState)
+        {
+        case GAME_RUNNING:
+            {
+
+            }
+            break;
+
+        case GAME_FADING:
+            {
+                fader_->FadeIn(3.0F);
+            }
+            break;
+        }
+    }
+
+    void SetupViewport()
+    {
+        Node* cameraNode = scene_->GetChild(CAMERA_NODE_NAME, true);
+        Camera* cam = cameraNode->GetComponent<Camera>();
+        Renderer* renderer = GetSubsystem<Renderer>();
+        SharedPtr<Viewport> viewport(new Viewport(context_, scene_, cam));
+        renderer->SetViewport(0, viewport);
+    }
+
+    void CreateScene()
+    {
+        ResourceCache* cache = GetSubsystem<ResourceCache>();
+        scene_ = new Scene(context_);
+        unsigned t = Time::GetSystemTime();
+        {
+            TimeLogger _l("Game scene load");
+            scene_->LoadXML(cache->GetFile(GAME_SCENE_NAME));
+        }
+
+        Node* cameraNode = scene_.CreateChild(CAMERA_NODE_NAME);
+
+        Node* tmpPlayerNode = scene_.GetChild("player", true);
+        Vector3 playerPos;
+        Quaternion playerRot;
+        if (tmpPlayerNode !is null)
+        {
+            playerPos = tmpPlayerNode->GetWorldPosition();
+            playerRot = tmpPlayerNode->GetWorldRotation();
+            playerPos.y_ = 0;
+            tmpPlayerNode->Remove();
+        }
+
+        //Node@ playerNode = CreateCharacter("player", "bruce_w", "Bruce", playerPos, playerRot);
+        //audio.listener = playerNode.GetChild(HEAD, true).CreateComponent("SoundListener");
+        //playerId = playerNode.id;
+
+        // preprocess current scene
+        PODVector<unsigned> nodes_to_remove;
+        for (unsigned i=0; i<scene_->GetNumChildren(); ++i)
+        {
+            Node* _node = scene_->GetChild(i);
+            if (_node->GetName().StartsWith("thug"))
+            {
+                nodes_to_remove.Push(_node->GetId());
+                //Vector3 v = _node.worldPosition;
+                //v.y = 0;
+                //em.enemyResetPositions.Push(v);
+                //em.enemyResetRotations.Push(_node.worldRotation);
+                //++enemyNum;
+            }
+            else if (_node->GetName().StartsWith("preload_"))
+                nodes_to_remove.Push(_node.id);
+            else if (_node->GetName().StartsWith("light"))
+            {
+                Light* light = _node->GetComponent("Light");
+                //if (render_features & RF_SHADOWS == 0)
+                //    light.castShadows = false;
+                light->SetShadowBias(BiasParameters(0.00025F, 0.5F));
+                light->SetShadowCascade(CascadeParameters(10.0F, 50.0F, 200.0F, 0.0F, 0.8F));
+            }
+        }
+
+        for (unsigned i=0; i<nodes_to_remove.Size(); ++i)
+            scene_->GetNode(nodes_to_remove[i])->Remove();
+
+        //Vector3 v_pos = playerNode->GetWorldPosition();
+        //cameraNode.position = Vector3(v_pos.x, 10.0f, -10);
+        //cameraNode.LookAt(Vector3(v_pos.x, 4, 0));
+
+        //gCameraMgr.Start(cameraNode);
+        //gCameraMgr.SetCameraController("Debug");
+        //gCameraMgr.SetCameraController("ThirdPerson");
+        //gCameraMgr.SetCameraController("LookAt");
+
+        //Node@ floor = scene_.GetChild("floor", true);
+        //StaticModel@ model = floor.GetComponent("StaticModel");
+        // WORLD_HALF_SIZE = model.boundingBox.halfSize * floor.worldScale;
+    }
+
+    virtual String GetDebugText() const
+    {
+        return  String(" name=") + name_ + " timeInState=" + String(timeInState_) +
+               " state=" + String(state_) + "\n";
+    }
+};
 
 }
