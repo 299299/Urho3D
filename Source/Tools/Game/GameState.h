@@ -9,6 +9,8 @@
 #include <Urho3D/UI/Text.h>
 #include <Urho3D/Graphics/Graphics.h>
 #include <Urho3D/Graphics/Texture2D.h>
+#include <Urho3D/Graphics/Camera.h>
+#include <Urho3D/Graphics/Renderer.h>
 #include <Urho3D/Scene/ValueAnimation.h>
 #include <Urho3D/Scene/SceneEvents.h>
 
@@ -21,6 +23,17 @@ enum LoadSubState
     LOADING_MOTIONS,
     LOADING_FINISHED,
 };
+
+enum GameSubState
+{
+    GAME_FADING,
+    GAME_RUNNING,
+    GAME_FAIL,
+    GAME_RESTARTING,
+    GAME_PAUSE,
+    GAME_WIN,
+};
+
 
 class GameState : public State
 {
@@ -51,7 +64,7 @@ public:
         Graphics* graphics = GetSubsystem<Graphics>();
 
         Texture2D* logoTexture = cache->GetResource<Texture2D>("Textures/ulogo.jpg");
-        SharedPtr<Sprite> logoSprite = ui->GetRoot()->CreateChild<Sprite>();
+        SharedPtr<Sprite> logoSprite(ui->GetRoot()->CreateChild<Sprite>());
         logoSprite->SetTexture(logoTexture);
         unsigned textureWidth = logoTexture->GetWidth();
         unsigned textureHeight = logoTexture->GetHeight();
@@ -64,7 +77,7 @@ public:
         logoSprite->SetPriority(-100);
         logoSprite->AddTag(UI_LOADING_TAG);
 
-        SharedPtr<Text> text = ui->GetRoot()->CreateChild<Text>();
+        SharedPtr<Text> text(ui->GetRoot()->CreateChild<Text>());
         text->SetName("loading_text");
         text->SetFont(cache->GetResource<Font>(UI_FONT), UI_FONT_SIZE);
         text->SetAlignment(HA_LEFT, VA_BOTTOM);
@@ -74,7 +87,7 @@ public:
         text->AddTag(UI_LOADING_TAG);
 
         Texture2D* loadingTexture = cache->GetResource<Texture2D>("Textures/Loading.tga");
-        SharedPtr<Sprite> loadingSprite = ui->GetRoot()->CreateChild<Sprite>();
+        SharedPtr<Sprite> loadingSprite(ui->GetRoot()->CreateChild<Sprite>());
         loadingSprite->SetTexture(loadingTexture);
         textureWidth = loadingTexture->GetWidth();
         textureHeight = loadingTexture->GetHeight();
@@ -203,8 +216,6 @@ public:
     InGameState(Context* c)
     :GameState(c)
     ,state_(-1)
-    ,fadeTime_(0.0F)
-    ,fadeInDuration_(2.0F)
     {
         SetName("InGameState");
     }
@@ -230,8 +241,8 @@ public:
             height = 64;
         Text* messageText = ui->GetRoot()->CreateChild<Text>("message");
         messageText->SetFont(cache->GetResource<Font>(UI_FONT), UI_FONT_SIZE);
-        messageText.SetAlignment(HA_CENTER, VA_CENTER);
-        messageText.SetPosition(0, -height * 2 + 100);
+        messageText->SetAlignment(HA_CENTER, VA_CENTER);
+        messageText->SetPosition(0, -height * 2 + 100);
         messageText->SetColor(Color::RED);
         messageText->SetVisible(false);
 
@@ -245,7 +256,7 @@ public:
 
     virtual void Update(float dt) override
     {
-        switch (state)
+        switch (state_)
         {
         case GAME_FADING:
             {
@@ -264,7 +275,7 @@ public:
         if (state_ == newState)
             return;
 
-        int oldState = state;
+        int oldState = state_;
         URHO3D_LOGINFO("InGameState ChangeSubState from " + String(oldState) + " to " + String(newState));
         state_ = newState;
         timeInState_ = 0.0F;
@@ -301,15 +312,16 @@ public:
         unsigned t = Time::GetSystemTime();
         {
             TimeLogger _l("Game scene load");
-            scene_->LoadXML(cache->GetFile(GAME_SCENE_NAME));
+            scene_->LoadXML(*cache->GetFile(GAME_SCENE_NAME));
         }
 
-        Node* cameraNode = scene_.CreateChild(CAMERA_NODE_NAME);
+        Node* cameraNode = scene_->CreateChild(CAMERA_NODE_NAME);
+        cameraNode->CreateComponent<Camera>();
 
-        Node* tmpPlayerNode = scene_.GetChild("player", true);
+        Node* tmpPlayerNode = scene_->GetChild("player", true);
         Vector3 playerPos;
         Quaternion playerRot;
-        if (tmpPlayerNode !is null)
+        if (tmpPlayerNode)
         {
             playerPos = tmpPlayerNode->GetWorldPosition();
             playerRot = tmpPlayerNode->GetWorldRotation();
@@ -328,7 +340,7 @@ public:
             Node* _node = scene_->GetChild(i);
             if (_node->GetName().StartsWith("thug"))
             {
-                nodes_to_remove.Push(_node->GetId());
+                nodes_to_remove.Push(_node->GetID());
                 //Vector3 v = _node.worldPosition;
                 //v.y = 0;
                 //em.enemyResetPositions.Push(v);
@@ -336,10 +348,10 @@ public:
                 //++enemyNum;
             }
             else if (_node->GetName().StartsWith("preload_"))
-                nodes_to_remove.Push(_node.id);
+                nodes_to_remove.Push(_node->GetID());
             else if (_node->GetName().StartsWith("light"))
             {
-                Light* light = _node->GetComponent("Light");
+                Light* light = _node->GetComponent<Light>();
                 //if (render_features & RF_SHADOWS == 0)
                 //    light.castShadows = false;
                 light->SetShadowBias(BiasParameters(0.00025F, 0.5F));
@@ -364,7 +376,7 @@ public:
         // WORLD_HALF_SIZE = model.boundingBox.halfSize * floor.worldScale;
     }
 
-    virtual String GetDebugText() const
+    virtual String GetDebugText() const override
     {
         return  String(" name=") + name_ + " timeInState=" + String(timeInState_) +
                " state=" + String(state_) + "\n";

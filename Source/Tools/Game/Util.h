@@ -3,8 +3,10 @@
 #include <Urho3D/Core/Timer.h>
 #include <Urho3D/IO/Log.h>
 #include <Urho3D/Math/MathDefs.h>
+#include <Urho3D/Graphics/Graphics.h>
 #include <Urho3D/Graphics/DebugRenderer.h>
 #include <Urho3D/Scene/ValueAnimation.h>
+#include <Urho3D/UI/UI.h>
 #include <Urho3D/UI/BorderImage.h>
 
 namespace Urho3D
@@ -75,8 +77,8 @@ public:
 
     ~TimeLogger()
     {
-        unsigned dt = Time::GetSystemTime() - t;
-        URHO3D_LOGINFO(String(message) + String(" time-cost: ") + String(dt) + String(" ms."));
+        unsigned dt = Time::GetSystemTime() - time_;
+        URHO3D_LOGINFO(String(message_) + String(" time-cost: ") + String(dt) + String(" ms."));
     }
 };
 
@@ -98,7 +100,7 @@ public:
         image_->SetVisible(false);
         image_->SetPriority(-999);
         image_->SetOpacity(1.0F);
-        image_->SetTexture(cache->GetResource<Texture2D>("Textures/fade.png"));
+        image_->SetTexture(cache->GetResource<Texture>("Textures/fade.png"));
         image_->SetFullImageRect();
         image_->SetFixedSize(g->GetWidth(), g->GetHeight());
     }
@@ -108,7 +110,7 @@ public:
         Graphics* g = GetSubsystem<Graphics>();
         image_->SetFixedSize(g->GetWidth(), g->GetHeight());
         float t = image_->GetAttributeAnimationTime("Opacity");
-        if (t + 0.05F >= fadeTime)
+        if (t + 0.05F >= fadeTime_)
         {
             image_->SetVisible(false);
             return 1;
