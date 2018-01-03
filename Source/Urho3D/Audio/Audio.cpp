@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2017 the Urho3D project.
+// Copyright (c) 2008-2018 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -271,7 +271,7 @@ float Audio::GetSoundSourceMasterGain(StringHash typeHash) const
 
 void SDLAudioCallback(void* userdata, Uint8* stream, int len)
 {
-    Audio* audio = static_cast<Audio*>(userdata);
+    auto* audio = static_cast<Audio*>(userdata);
     {
         MutexLock Lock(audio->GetMutex());
         audio->MixOutput(stream, len / audio->GetSampleSize() / Audio::SAMPLE_SIZE_MUL);
@@ -318,7 +318,7 @@ void Audio::MixOutput(void* dest, unsigned samples)
         while (clipSamples--)
             *destPtr++ = (float)Clamp(*clipPtr++, -32768, 32767) / 32768.0f;
 #else
-        short* destPtr = (short*)dest;
+        auto* destPtr = (short*)dest;
         while (clipSamples--)
             *destPtr++ = (short)Clamp(*clipPtr++, -32768, 32767);
 #endif

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2017 the Urho3D project.
+// Copyright (c) 2008-2018 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -139,13 +139,9 @@ bool TileMapInfo2D::PositionToTileIndex(int& x, int& y, const Vector2& position)
     return x >= 0 && x < width_ && y >= 0 && y < height_;
 }
 
-PropertySet2D::PropertySet2D()
-{
-}
+PropertySet2D::PropertySet2D() = default;
 
-PropertySet2D::~PropertySet2D()
-{
-}
+PropertySet2D::~PropertySet2D() = default;
 
 void PropertySet2D::Load(const XMLElement& element)
 {
@@ -193,9 +189,7 @@ const String& Tile2D::GetProperty(const String& name) const
     return propertySet_->GetProperty(name);
 }
 
-TileMapObject2D::TileMapObject2D()
-{
-}
+TileMapObject2D::TileMapObject2D() = default;
 
 unsigned TileMapObject2D::GetNumPoints() const
 {

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2017 the Urho3D project.
+// Copyright (c) 2008-2018 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -380,14 +380,14 @@ template <class T> void RegisterObject(asIScriptEngine* engine, const char* clas
 
 template <class T> T* ConstructObject()
 {
-    T* object = new T(GetScriptContext());
+    auto* object = new T(GetScriptContext());
     object->AddRef();
     return object;
 }
 
 template <class T> T* ConstructNamedObject(const String& name)
 {
-    T* object = new T(GetScriptContext());
+    auto* object = new T(GetScriptContext());
     object->AddRef();
     object->SetName(name);
     return object;
@@ -407,9 +407,7 @@ template <class T> void RegisterNamedObjectConstructor(asIScriptEngine* engine, 
     engine->RegisterObjectBehaviour(className, asBEHAVE_FACTORY, declFactoryWithName.CString(), asFUNCTION(ConstructNamedObject<T>), asCALL_CDECL);
 }
 
-static const AttributeInfo noAttributeInfo;
-
-// To keep Xcode LLVM/Clang happy - it erroneosly warns on unused functions defined below which are actually being referenced in the code
+// To keep Xcode LLVM/Clang happy - it erroneously warns on unused functions defined below which are actually being referenced in the code
 #if __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-function"
@@ -417,6 +415,8 @@ static const AttributeInfo noAttributeInfo;
 
 static const AttributeInfo& SerializableGetAttributeInfo(unsigned index, Serializable* ptr)
 {
+    static const AttributeInfo noAttributeInfo;
+
     const Vector<AttributeInfo>* attributes = ptr->GetAttributes();
     if (!attributes || index >= attributes->Size())
     {
@@ -427,14 +427,14 @@ static const AttributeInfo& SerializableGetAttributeInfo(unsigned index, Seriali
         return attributes->At(index);
 }
 
-static bool SerializableLoad(File* file, bool setInstanceDefault, Serializable* ptr)
+static bool SerializableLoad(File* file, Serializable* ptr)
 {
-    return file && ptr->Load(*file, setInstanceDefault);
+    return file && ptr->Load(*file);
 }
 
-static bool SerializableLoadVectorBuffer(VectorBuffer& buffer, bool setInstanceDefault, Serializable* ptr)
+static bool SerializableLoadVectorBuffer(VectorBuffer& buffer, Serializable* ptr)
 {
-    return ptr->Load(buffer, setInstanceDefault);
+    return ptr->Load(buffer);
 }
 
 static bool SerializableSave(File* file, Serializable* ptr)
@@ -451,13 +451,13 @@ static bool SerializableSaveVectorBuffer(VectorBuffer& buffer, Serializable* ptr
 template <class T> void RegisterSerializable(asIScriptEngine* engine, const char* className)
 {
     RegisterObject<T>(engine, className);
-    engine->RegisterObjectMethod(className, "bool Load(File@+, bool setInstanceDefault = false)", asFUNCTION(SerializableLoad), asCALL_CDECL_OBJLAST);
-    engine->RegisterObjectMethod(className, "bool Load(VectorBuffer&, bool setInstanceDefault = false)", asFUNCTION(SerializableLoadVectorBuffer), asCALL_CDECL_OBJLAST);
+    engine->RegisterObjectMethod(className, "bool Load(File@+)", asFUNCTION(SerializableLoad), asCALL_CDECL_OBJLAST);
+    engine->RegisterObjectMethod(className, "bool Load(VectorBuffer&)", asFUNCTION(SerializableLoadVectorBuffer), asCALL_CDECL_OBJLAST);
     engine->RegisterObjectMethod(className, "bool Save(File@+) const", asFUNCTION(SerializableSave), asCALL_CDECL_OBJLAST);
     engine->RegisterObjectMethod(className, "bool Save(VectorBuffer&) const", asFUNCTION(SerializableSaveVectorBuffer), asCALL_CDECL_OBJLAST);
-    engine->RegisterObjectMethod(className, "bool LoadXML(const XMLElement&, bool setInstanceDefault = false)", asMETHODPR(T, LoadXML, (const XMLElement&, bool), bool), asCALL_THISCALL);
+    engine->RegisterObjectMethod(className, "bool LoadXML(const XMLElement&)", asMETHODPR(T, LoadXML, (const XMLElement&), bool), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "bool SaveXML(XMLElement&) const", asMETHODPR(T, SaveXML, (XMLElement&) const, bool), asCALL_THISCALL);
-    engine->RegisterObjectMethod(className, "bool LoadJSON(const JSONValue&, bool setInstanceDefault = false)", asMETHODPR(T, LoadJSON, (const JSONValue&, bool), bool), asCALL_THISCALL);
+    engine->RegisterObjectMethod(className, "bool LoadJSON(const JSONValue&)", asMETHODPR(T, LoadJSON, (const JSONValue&), bool), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "bool SaveJSON(JSONValue&) const", asMETHODPR(T, SaveJSON, (JSONValue&) const, bool), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "void MarkNetworkUpdate() const", asMETHODPR(T, MarkNetworkUpdate, (), void), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "void ApplyAttributes()", asMETHODPR(T, ApplyAttributes, (), void), asCALL_THISCALL);
@@ -985,7 +985,8 @@ template <class T> void RegisterStaticModel(asIScriptEngine* engine, const char*
     engine->RegisterObjectMethod(className, "Model@+ get_model() const", asMETHOD(T, GetModel), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "void set_material(Material@+)", asMETHODPR(T, SetMaterial, (Material*), void), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "bool set_materials(uint, Material@+)", asMETHODPR(T, SetMaterial, (unsigned, Material*), bool), asCALL_THISCALL);
-    engine->RegisterObjectMethod(className, "Material@+ get_materials(uint) const", asMETHOD(T, GetMaterial), asCALL_THISCALL);
+    engine->RegisterObjectMethod(className, "Material@+ get_material() const", asMETHODPR(T, GetMaterial, () const, Material*), asCALL_THISCALL);
+    engine->RegisterObjectMethod(className, "Material@+ get_materials(uint) const", asMETHODPR(T, GetMaterial, (unsigned) const, Material*), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "uint get_numGeometries() const", asMETHOD(T, GetNumGeometries), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "Zone@+ get_zone() const", asMETHOD(T, GetZone), asCALL_THISCALL);
 }
@@ -1111,12 +1112,12 @@ template <class T> void RegisterUIElement(asIScriptEngine* engine, const char* c
     RegisterObjectConstructor<T>(engine, className);
     RegisterNamedObjectConstructor<T>(engine, className);
     RegisterSubclass<UIElement, T>(engine, "UIElement", className);
-    engine->RegisterObjectMethod(className, "bool LoadXML(const XMLElement&in, XMLFile@+, bool arg2 = false)", asMETHODPR(T, LoadXML, (const XMLElement&, XMLFile*, bool), bool), asCALL_THISCALL);
+    engine->RegisterObjectMethod(className, "bool LoadXML(const XMLElement&in, XMLFile@+)", asMETHODPR(T, LoadXML, (const XMLElement&, XMLFile*), bool), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "bool LoadXML(File@+)", asFUNCTIONPR(UIElementLoadXML, (File*, UIElement*), bool), asCALL_CDECL_OBJLAST);
     engine->RegisterObjectMethod(className, "bool LoadXML(VectorBuffer&)", asFUNCTIONPR(UIElementLoadXMLVectorBuffer, (VectorBuffer&, UIElement*), bool), asCALL_CDECL_OBJLAST);
     engine->RegisterObjectMethod(className, "bool LoadXML(XMLFile@+, XMLFile@+)", asFUNCTIONPR(UIElementLoadXML, (XMLFile*, XMLFile*, UIElement*), bool), asCALL_CDECL_OBJLAST);
-    engine->RegisterObjectMethod(className, "UIElement@+ LoadChildXML(const XMLElement&in, XMLFile@+ arg1 = null, bool arg2 = false)", asMETHOD(T, LoadChildXML), asCALL_THISCALL);
-    engine->RegisterObjectMethod(className, "UIElement@+ LoadChildXML(XMLFile@+, XMLFile@+ arg1 = null)", asFUNCTION(UIElementLoadChildXML), asCALL_CDECL_OBJLAST);
+    engine->RegisterObjectMethod(className, "UIElement@+ LoadChildXML(const XMLElement&in, XMLFile@+)", asMETHOD(T, LoadChildXML), asCALL_THISCALL);
+    engine->RegisterObjectMethod(className, "UIElement@+ LoadChildXML(XMLFile@+, XMLFile@+)", asFUNCTION(UIElementLoadChildXML), asCALL_CDECL_OBJLAST);
     engine->RegisterObjectMethod(className, "bool SaveXML(File@+, const String&in indentation = \"\t\")", asFUNCTION(UIElementSaveXML), asCALL_CDECL_OBJLAST);
     engine->RegisterObjectMethod(className, "bool SaveXML(VectorBuffer&, const String&in indentation = \"\t\")", asFUNCTION(UIElementSaveXMLVectorBuffer), asCALL_CDECL_OBJLAST);
     engine->RegisterObjectMethod(className, "bool SetStyle(const XMLElement&in)", asMETHODPR(T, SetStyle, (const XMLElement&), bool), asCALL_THISCALL);

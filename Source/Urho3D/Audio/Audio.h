@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2017 the Urho3D project.
+// Copyright (c) 2008-2018 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -43,9 +43,9 @@ class URHO3D_API Audio : public Object
 
 public:
     /// Construct.
-    Audio(Context* context);
+    explicit Audio(Context* context);
     /// Destruct. Terminate the audio thread and free the audio buffer.
-    virtual ~Audio() override;
+    ~Audio() override;
 
     /// Initialize sound output with specified buffer length and output mode.
     bool SetMode(int bufferLengthMSec, int mixRate, bool stereo, bool interpolation = true);
