@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2017 the Urho3D project.
+// Copyright (c) 2008-2018 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -45,9 +45,9 @@ class URHO3D_API FileSystem : public Object
 
 public:
     /// Construct.
-    FileSystem(Context* context);
+    explicit FileSystem(Context* context);
     /// Destruct.
-    virtual ~FileSystem() override;
+    ~FileSystem() override;
 
     /// Set the current working directory.
     bool SetCurrentDir(const String& pathName);
@@ -101,6 +101,8 @@ public:
     String GetUserDocumentsDir() const;
     /// Return the application preferences directory.
     String GetAppPreferencesDir(const String& org, const String& app) const;
+    /// Return path of temporary directory. Path always ends with a forward slash.
+    String GetTemporaryDir() const;
 
 private:
     /// Scan directory, called internally.

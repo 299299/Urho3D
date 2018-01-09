@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2017 the Urho3D project.
+// Copyright (c) 2008-2018 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -122,6 +122,26 @@ XMLElement XMLElement::GetOrCreateChild(const char* name)
         return child;
     else
         return CreateChild(name);
+}
+
+bool XMLElement::AppendChild(XMLElement element, bool asCopy)
+{
+    if (!element.file_ || (!element.node_ && !element.xpathNode_) || !file_ || (!node_ && !xpathNode_))
+        return false;
+
+    pugi::xml_node node = xpathNode_ ? xpathNode_->node() : pugi::xml_node(node_);
+    const pugi::xml_node& child = element.xpathNode_ ? element.xpathNode_->node() : pugi::xml_node(element.node_);
+
+    if (asCopy)
+        node.append_copy(child);
+    else
+        node.append_move(child);
+    return true;
+}
+
+bool XMLElement::Remove()
+{
+    return GetParent().RemoveChild(*this);
 }
 
 bool XMLElement::RemoveChild(const XMLElement& element)
@@ -758,7 +778,7 @@ bool XMLElement::GetBuffer(const String& name, void* dest, unsigned size) const
     if (size < bytes.Size())
         return false;
 
-    unsigned char* destBytes = (unsigned char*)dest;
+    auto* destBytes = (unsigned char*)dest;
     for (unsigned i = 0; i < bytes.Size(); ++i)
         destBytes[i] = (unsigned char)ToInt(bytes[i]);
     return true;
@@ -1038,18 +1058,14 @@ bool XPathResultSet::Empty() const
     return resultSet_ ? resultSet_->empty() : true;
 }
 
-XPathQuery::XPathQuery()
-{
-}
+XPathQuery::XPathQuery() = default;
 
 XPathQuery::XPathQuery(const String& queryString, const String& variableString)
 {
     SetQuery(queryString, variableString);
 }
 
-XPathQuery::~XPathQuery()
-{
-}
+XPathQuery::~XPathQuery() = default;
 
 void XPathQuery::Bind()
 {

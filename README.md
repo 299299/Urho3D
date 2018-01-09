@@ -113,6 +113,7 @@ Urho3D development, contributions and bugfixes by:
 - PredatorMF
 - Scellow
 - Skrylar
+- SuperWangKai
 - TheComet93
 - Y-way
 - 1vanK
@@ -120,6 +121,7 @@ Urho3D development, contributions and bugfixes by:
 - amadeus_osa
 - atship
 - att
+- att-kin9
 - celeron55
 - cosmy1
 - damu
@@ -128,6 +130,7 @@ Urho3D development, contributions and bugfixes by:
 - fredakilla
 - gleblebedev
 - hdunderscore
+- hsnabn
 - lhinuz
 - lvshiling
 - marynate
@@ -194,7 +197,7 @@ Urho3D uses the following third-party libraries:
 - pugixml 1.7 (http://pugixml.org)
 - rapidjson 1.1.0 (https://github.com/miloyip/rapidjson)
 - Recast/Detour (https://github.com/memononen/recastnavigation)
-- SDL 2.0.5 (https://www.libsdl.org)
+- SDL 2.0.7 (https://www.libsdl.org)
 - SQLite 3.20.1 (https://www.sqlite.org)
 - StanHull (https://codesuppository.blogspot.com/2006/03/john-ratcliffs-code-suppository-blog.html)
 - stb_image 2.12 (https://nothings.org)

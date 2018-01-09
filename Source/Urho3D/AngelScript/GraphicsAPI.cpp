@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2017 the Urho3D project.
+// Copyright (c) 2008-2018 the Urho3D project.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -145,6 +145,7 @@ static void RegisterSkeleton(asIScriptEngine* engine)
     engine->RegisterObjectBehaviour("Bone", asBEHAVE_ADDREF, "void f()", asFUNCTION(FakeAddRef), asCALL_CDECL_OBJLAST);
     engine->RegisterObjectBehaviour("Bone", asBEHAVE_RELEASE, "void f()", asFUNCTION(FakeReleaseRef), asCALL_CDECL_OBJLAST);
     engine->RegisterObjectProperty("Bone", "const String name", offsetof(Bone, name_));
+    engine->RegisterObjectProperty("Bone", "const uint parentIndex", offsetof(Bone, parentIndex_));
     engine->RegisterObjectProperty("Bone", "Vector3 initialPosition", offsetof(Bone, initialPosition_));
     engine->RegisterObjectProperty("Bone", "Quaternion initialRotation", offsetof(Bone, initialRotation_));
     engine->RegisterObjectProperty("Bone", "Vector3 initialScale", offsetof(Bone, initialScale_));
@@ -159,6 +160,8 @@ static void RegisterSkeleton(asIScriptEngine* engine)
     engine->RegisterObjectBehaviour("Skeleton", asBEHAVE_RELEASE, "void f()", asFUNCTION(FakeReleaseRef), asCALL_CDECL_OBJLAST);
     engine->RegisterObjectMethod("Skeleton", "void Reset()", asMETHOD(Skeleton, Reset), asCALL_THISCALL);
     engine->RegisterObjectMethod("Skeleton", "Bone@+ GetBone(const String&in) const", asMETHODPR(Skeleton, GetBone, (const String&), Bone*), asCALL_THISCALL);
+    engine->RegisterObjectMethod("Skeleton", "uint GetBoneIndex(const String&in) const", asMETHODPR(Skeleton, GetBoneIndex, (const String&) const, unsigned), asCALL_THISCALL);
+    engine->RegisterObjectMethod("Skeleton", "Bone@+ GetBoneParent(Bone@+) const", asMETHODPR(Skeleton, GetBoneParent, (const Bone*), Bone*), asCALL_THISCALL);
     engine->RegisterObjectMethod("Skeleton", "Bone@+ get_rootBone() const", asMETHOD(Skeleton, GetRootBone), asCALL_THISCALL);
     engine->RegisterObjectMethod("Skeleton", "uint get_numBones() const", asMETHOD(Skeleton, GetNumBones), asCALL_THISCALL);
     engine->RegisterObjectMethod("Skeleton", "Bone@+ get_bones(uint)", asMETHODPR(Skeleton, GetBone, (unsigned), Bone*), asCALL_THISCALL);
@@ -408,6 +411,8 @@ static void RegisterRenderPath(asIScriptEngine* engine)
     engine->RegisterObjectMethod("RenderPath", "const RenderPathCommand& get_commands(uint) const", asFUNCTION(RenderPathGetCommand), asCALL_CDECL_OBJLAST);
     engine->RegisterObjectMethod("RenderPath", "void set_shaderParameters(const String&in, const Variant&in)", asMETHOD(RenderPath, SetShaderParameter), asCALL_THISCALL);
     engine->RegisterObjectMethod("RenderPath", "const Variant& get_shaderParameters(const String&in) const", asMETHOD(RenderPath, GetShaderParameter), asCALL_THISCALL);
+    engine->RegisterObjectMethod("RenderPath", "bool get_enabled(const String&in) const", asMETHOD(RenderPath, IsEnabled), asCALL_THISCALL);
+    engine->RegisterObjectMethod("RenderPath", "bool get_added(const String&in) const", asMETHOD(RenderPath, IsAdded), asCALL_THISCALL);
 }
 
 static void RegisterTextures(asIScriptEngine* engine)
@@ -609,10 +614,10 @@ static CScriptArray* MaterialGetShaderParameterNames(Material* material)
     return VectorToArray<String>(result, "Array<String>");
 }
 
-static TechniqueEntry noTechniqueEntry;
-
 static const TechniqueEntry& MaterialGetTechniqueEntry(unsigned index, Material* ptr)
 {
+    static TechniqueEntry noTechniqueEntry;
+
     if (index >= ptr->GetNumTechniques())
     {
         asGetActiveContext()->SetException("Index out of bounds");
@@ -1190,10 +1195,10 @@ static void RegisterLight(asIScriptEngine* engine)
     engine->RegisterObjectBehaviour("CascadeParameters", asBEHAVE_CONSTRUCT, "void f()", asFUNCTION(ConstructCascadeParameters), asCALL_CDECL_OBJLAST);
     engine->RegisterObjectBehaviour("CascadeParameters", asBEHAVE_CONSTRUCT, "void f(const CascadeParameters&in)", asFUNCTION(ConstructCascadeParametersCopy), asCALL_CDECL_OBJLAST);
     engine->RegisterObjectBehaviour("CascadeParameters", asBEHAVE_CONSTRUCT, "void f(float, float, float, float, float, float biasAutoAdjust = 1.0)", asFUNCTION(ConstructCascadeParametersInit), asCALL_CDECL_OBJLAST);
-    engine->RegisterObjectProperty("CascadeParameters", "float split1", offsetof(CascadeParameters, splits_[0]));
-    engine->RegisterObjectProperty("CascadeParameters", "float split2", offsetof(CascadeParameters, splits_[1]));
-    engine->RegisterObjectProperty("CascadeParameters", "float split3", offsetof(CascadeParameters, splits_[2]));
-    engine->RegisterObjectProperty("CascadeParameters", "float split4", offsetof(CascadeParameters, splits_[3]));
+    engine->RegisterObjectProperty("CascadeParameters", "float split1", offsetof(CascadeParameters, splits_.x_));
+    engine->RegisterObjectProperty("CascadeParameters", "float split2", offsetof(CascadeParameters, splits_.y_));
+    engine->RegisterObjectProperty("CascadeParameters", "float split3", offsetof(CascadeParameters, splits_.z_));
+    engine->RegisterObjectProperty("CascadeParameters", "float split4", offsetof(CascadeParameters, splits_.w_));
     engine->RegisterObjectProperty("CascadeParameters", "float fadeStart", offsetof(CascadeParameters, fadeStart_));
     engine->RegisterObjectProperty("CascadeParameters", "float biasAutoAdjust", offsetof(CascadeParameters, biasAutoAdjust_));
 
@@ -1313,7 +1318,8 @@ static void RegisterStaticModel(asIScriptEngine* engine)
     engine->RegisterObjectMethod("StaticModel", "Model@+ get_model() const", asMETHOD(StaticModel, GetModel), asCALL_THISCALL);
     engine->RegisterObjectMethod("StaticModel", "void set_material(Material@+)", asMETHODPR(StaticModel, SetMaterial, (Material*), void), asCALL_THISCALL);
     engine->RegisterObjectMethod("StaticModel", "bool set_materials(uint, Material@+)", asMETHODPR(StaticModel, SetMaterial, (unsigned, Material*), bool), asCALL_THISCALL);
-    engine->RegisterObjectMethod("StaticModel", "Material@+ get_materials(uint) const", asMETHOD(StaticModel, GetMaterial), asCALL_THISCALL);
+    engine->RegisterObjectMethod("StaticModel", "Material@+ get_material() const", asMETHODPR(StaticModel, GetMaterial, () const, Material*), asCALL_THISCALL);
+    engine->RegisterObjectMethod("StaticModel", "Material@+ get_materials(uint) const", asMETHODPR(StaticModel, GetMaterial, (unsigned) const, Material*), asCALL_THISCALL);
     engine->RegisterObjectMethod("StaticModel", "uint get_numGeometries() const", asMETHOD(StaticModel, GetNumGeometries), asCALL_THISCALL);
     engine->RegisterObjectMethod("StaticModel", "void set_occlusionLodLevel(uint) const", asMETHOD(StaticModel, SetOcclusionLodLevel), asCALL_THISCALL);
     engine->RegisterObjectMethod("StaticModel", "uint get_occlusionLodLevel() const", asMETHOD(StaticModel, GetOcclusionLodLevel), asCALL_THISCALL);
@@ -1880,6 +1886,7 @@ static void RegisterGraphics(asIScriptEngine* engine)
     engine->RegisterObjectMethod("Graphics", "bool ToggleFullscreen()", asMETHOD(Graphics, ToggleFullscreen), asCALL_THISCALL);
     engine->RegisterObjectMethod("Graphics", "void Maximize()", asMETHOD(Graphics, Maximize), asCALL_THISCALL);
     engine->RegisterObjectMethod("Graphics", "void Minimize()", asMETHOD(Graphics, Minimize), asCALL_THISCALL);
+    engine->RegisterObjectMethod("Graphics", "void Raise()", asMETHOD(Graphics, Raise), asCALL_THISCALL);
     engine->RegisterObjectMethod("Graphics", "void Close()", asMETHOD(Graphics, Close), asCALL_THISCALL);
     engine->RegisterObjectMethod("Graphics", "bool TakeScreenShot(Image@+)", asMETHOD(Graphics, TakeScreenShot), asCALL_THISCALL);
     engine->RegisterObjectMethod("Graphics", "void BeginDumpShaders(const String&in)", asMETHOD(Graphics, BeginDumpShaders), asCALL_THISCALL);
@@ -1926,6 +1933,9 @@ static void RegisterGraphics(asIScriptEngine* engine)
     engine->RegisterObjectMethod("Graphics", "Array<int>@ get_multiSampleLevels() const", asFUNCTION(GraphicsGetMultiSampleLevels), asCALL_CDECL_OBJLAST);
     engine->RegisterObjectMethod("Graphics", "IntVector2 get_desktopResolution(int) const", asMETHOD(Graphics, GetDesktopResolution), asCALL_THISCALL);
     engine->RegisterObjectMethod("Graphics", "int get_monitorCount() const", asFUNCTION(GraphicsGetMonitorCount), asCALL_CDECL_OBJLAST);
+    engine->RegisterObjectMethod("Graphics", "int get_currentMonitor() const", asMETHOD(Graphics, GetCurrentMonitor), asCALL_THISCALL);
+    engine->RegisterObjectMethod("Graphics", "bool get_maximized() const", asMETHOD(Graphics, GetMaximized), asCALL_THISCALL);
+    engine->RegisterObjectMethod("Graphics", "Vector3 get_displayDPI(int) const", asMETHOD(Graphics, GetDisplayDPI), asCALL_THISCALL);
     engine->RegisterGlobalFunction("Graphics@+ get_graphics()", asFUNCTION(GetGraphics), asCALL_CDECL);
 }
 

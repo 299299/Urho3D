@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008-2017 the Urho3D project.
+# Copyright (c) 2008-2018 the Urho3D project.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -166,17 +166,20 @@ if (CMAKE_PROJECT_NAME STREQUAL Urho3D)
     # On Windows platform Direct3D11 can be optionally chosen
     # Using Direct3D11 on non-MSVC compiler may require copying and renaming Microsoft official libraries (.lib to .a), else link failures or non-functioning graphics may result
     cmake_dependent_option (URHO3D_D3D11 "Use Direct3D11 instead of Direct3D9 (Windows platform only); overrides URHO3D_OPENGL option" FALSE "WIN32" FALSE)
-    if (MINGW AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9.1)
-        if (NOT DEFINED URHO3D_SSE)     # Only give the warning once during initial configuration
-            # Certain MinGW versions fail to compile SSE code. This is the initial guess for known "bad" version range, and can be tightened later
-            message (WARNING "Disabling SSE by default due to MinGW version. It is recommended to upgrade to MinGW with GCC >= 4.9.1. "
-                "You can also try to re-enable SSE with CMake option -DURHO3D_SSE=1, but this may result in compile errors.")
-            set (HAVE_SSE2 FALSE)
-        endif ()
-    endif ()
     if (X86 OR WEB)
+        # TODO: Rename URHO3D_SSE to URHO3D_SIMD
+        if (MINGW AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9.1)
+            if (NOT DEFINED URHO3D_SSE)     # Only give the warning once during initial configuration
+                # Certain MinGW versions fail to compile SSE code. This is the initial guess for known "bad" version range, and can be tightened later
+                message (WARNING "Disabling SSE by default due to MinGW version. It is recommended to upgrade to MinGW with GCC >= 4.9.1. "
+                    "You can also try to re-enable SSE with CMake option -DURHO3D_SSE=1, but this may result in compile errors.")
+            endif ()
+            set (URHO3D_DEFAULT_SIMD FALSE)
+        else ()
+            set (URHO3D_DEFAULT_SIMD ${HAVE_SSE})
+        endif ()
         # It is not possible to turn SSE off on 64-bit MSVC and it appears it is also not able to do so safely on 64-bit GCC
-        cmake_dependent_option (URHO3D_SSE "Enable SSE/SSE2 instruction set (32-bit Web and Intel platforms only, including Android on Intel Atom); default to true on Intel and false on Web platform; the effective SSE level could be higher, see also URHO3D_DEPLOYMENT_TARGET and CMAKE_OSX_DEPLOYMENT_TARGET build options" "${HAVE_SSE2}" "NOT URHO3D_64BIT" TRUE)
+        cmake_dependent_option (URHO3D_SSE "Enable SIMD instruction set (32-bit Web and Intel platforms only, including Android on Intel Atom); default to true on Intel and false on Web platform; the effective SSE level could be higher, see also URHO3D_DEPLOYMENT_TARGET and CMAKE_OSX_DEPLOYMENT_TARGET build options" "${URHO3D_DEFAULT_SIMD}" "NOT URHO3D_64BIT" TRUE)
     endif ()
     cmake_dependent_option (URHO3D_3DNOW "Enable 3DNow! instruction set (Linux platform only); should only be used for older CPU with (legacy) 3DNow! support" "${HAVE_3DNOW}" "X86 AND CMAKE_SYSTEM_NAME STREQUAL Linux AND NOT URHO3D_SSE" FALSE)
     cmake_dependent_option (URHO3D_MMX "Enable MMX instruction set (32-bit Linux platform only); the MMX is effectively enabled when 3DNow! or SSE is enabled; should only be used for older CPU with MMX support" "${HAVE_MMX}" "X86 AND CMAKE_SYSTEM_NAME STREQUAL Linux AND NOT URHO3D_64BIT AND NOT URHO3D_SSE AND NOT URHO3D_3DNOW" FALSE)
@@ -225,7 +228,7 @@ else ()
         # Just reference it to suppress "unused variable" CMake warning on downstream projects using this CMake module
     endif ()
     if (CMAKE_PROJECT_NAME MATCHES ^Urho3D-ExternalProject-)
-        set (URHO3D_SSE ${HAVE_SSE2})
+        set (URHO3D_SSE ${HAVE_SSE})
     else ()
         # All Urho3D downstream projects require Urho3D library, so find Urho3D library here now
         find_package (Urho3D REQUIRED)
@@ -494,13 +497,9 @@ if (APPLE)
         # iOS-specific setup
         add_definitions (-DIOS)
         if (URHO3D_64BIT)
-            if (DEFINED ENV{XCODE_64BIT_ONLY})                  # This environment variable is set automatically when ccache is just being cleared in Travis CI VM
-                set (CMAKE_OSX_ARCHITECTURES "arm64 x86_64")    # This is a hack to temporarily only build 64-bit archs to reduce overall build time for one build
-            else ()
-                set (CMAKE_OSX_ARCHITECTURES $(ARCHS_STANDARD))
-            endif ()
+            set (CMAKE_OSX_ARCHITECTURES $(ARCHS_STANDARD))
         else ()
-            # This is a legacy option and should not be used as we are phasing out 32-bit only mode
+            message (WARNING "URHO3D_64BIT=0 for iOS is a deprecated option and should not be used as we are phasing out 32-bit only mode")
             set (CMAKE_OSX_ARCHITECTURES $(ARCHS_STANDARD_32_BIT))
         endif ()
     elseif (TVOS)
@@ -512,13 +511,13 @@ if (APPLE)
             # macOS-specific setup
             if (URHO3D_64BIT)
                 if (URHO3D_UNIVERSAL)
-                    # This is a legacy option and should not be used as we are phasing out macOS universal binary mode
+                    message (WARNING "URHO3D_UNIVERSAL=1 for macOS is a deprecated option and should not be used as we are phasing out macOS universal binary mode")
                     set (CMAKE_OSX_ARCHITECTURES $(ARCHS_STANDARD_32_64_BIT))
                 else ()
                     set (CMAKE_OSX_ARCHITECTURES $(ARCHS_STANDARD))
                 endif ()
             else ()
-                # This is a legacy option and should not be used as we are phasing out 32-bit only mode
+                message (WARNING "URHO3D_64BIT=0 for macOS is a deprecated option and should not be used as we are phasing out 32-bit only mode")
                 set (CMAKE_OSX_ARCHITECTURES $(ARCHS_STANDARD_32_BIT))
             endif ()
         endif ()
@@ -549,13 +548,11 @@ if (MSVC)
     set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${DEBUG_RUNTIME}")
     set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} ${RELEASE_RUNTIME} /fp:fast /Zi /GS- /D _SECURE_SCL=0")
     set (CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
-    # In Visual Studio, SSE2 flag is redundant if already compiling as 64bit; it is already the default for VS2012 (onward) on 32bit
-    # Instead, we must turn SSE/SSE2 off explicitly if user really intends to turn it off
+    # Visual Studio 2012 onward enables the SSE2 by default, however, we set the flag to AVX so that we get the SSE3 support (required by SDL)
+    # We must set the flag to IA32 if user intention is to turn the SIMD off
     if (URHO3D_SSE)
-        if (NOT URHO3D_64BIT AND MSVC_VERSION LESS 1700)
-            set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /arch:SSE2")
-            set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:SSE2")
-        endif ()
+        set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /arch:AVX")
+        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:AVX")
     else ()
         set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /arch:IA32")
         set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:IA32")
@@ -622,7 +619,10 @@ else ()
             # We don't add these flags directly here for Xcode because we support Mach-O universal binary build
             # The compiler flags will be added later conditionally when the effective arch is i386 during build time (using XCODE_ATTRIBUTE target property)
             if (NOT XCODE)
-                if (NOT URHO3D_64BIT)
+                if (URHO3D_64BIT)
+                    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse3")
+                    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse3")
+                else ()
                     # Not the compiler native ABI, this could only happen on multilib-capable compilers
                     if (NATIVE_64BIT)
                         set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32")
@@ -631,12 +631,19 @@ else ()
                     # The effective SSE level could be higher, see also URHO3D_DEPLOYMENT_TARGET and CMAKE_OSX_DEPLOYMENT_TARGET build options
                     # The -mfpmath=sse is not set in global scope but it may be set in local scope when building LuaJIT sub-library for x86 arch
                     if (URHO3D_SSE)
-                        set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse -msse2")
-                        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse -msse2")
+                        if (HAVE_SSE3)
+                            set (SIMD_FLAG -msse3)
+                        elseif (HAVE_SSE2)
+                            set (SIMD_FLAG -msse2)
+                        else ()
+                            set (SIMD_FLAG -msse)
+                        endif ()
+                        set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${SIMD_FLAG}")
+                        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SIMD_FLAG}")
                     endif ()
                 endif ()
                 if (NOT URHO3D_SSE)
-                    if (URHO3D_64BIT OR CMAKE_CXX_COMPILER_ID MATCHES Clang)
+                    if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
                         # Clang enables SSE support for i386 ABI by default, so use the '-mno-sse' compiler flag to nullify that and make it consistent with GCC
                         set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mno-sse")
                         set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mno-sse")
@@ -666,11 +673,11 @@ else ()
                     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -s USE_PTHREADS=1")
                     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s USE_PTHREADS=1")
                 endif ()
-                # Prior to version 1.31.3 emcc does not consistently add the cpp standard and remove Emscripten-specific compiler flags
-                # before passing on the work to the underlying LLVM/Clang compiler, this has resulted in preprocessing error when enabling the PCH and ccache
-                # (See https://github.com/kripken/emscripten/issues/3365 for more detail)
-                if (EMSCRIPTEN_EMCC_VERSION VERSION_LESS 1.31.3)
-                    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++03")
+                # Since version 1.37.25 emcc reduces default runtime exports, but we need "Pointer_stringify" so it needs to be explicitly declared now
+                # (See https://github.com/kripken/emscripten/commit/3bc1f9f08b9f420680124af703c787244468cedc for more detail)
+                if (NOT EMSCRIPTEN_EMCC_VERSION VERSION_LESS 1.37.25)
+                    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s EXTRA_EXPORTED_RUNTIME_METHODS=\"['Pointer_stringify']\"")
+                    set (CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -s EXTRA_EXPORTED_RUNTIME_METHODS=\"['Pointer_stringify']\"")
                 endif ()
                 set (CMAKE_C_FLAGS_RELEASE "-Oz -DNDEBUG")
                 set (CMAKE_CXX_FLAGS_RELEASE "-Oz -DNDEBUG")
@@ -884,6 +891,8 @@ macro (define_dependency_libs TARGET)
                 # Do nothing
             elseif (WIN32)
                 list (APPEND LIBS opengl32)
+            elseif (RPI)
+                list (APPEND LIBS brcmGLESv2)
             elseif (ANDROID OR ARM)
                 list (APPEND LIBS GLESv1_CM GLESv2)
             else ()
@@ -1574,11 +1583,6 @@ macro (setup_main_executable)
         define_resource_dirs ()
     endif ()
     if (ANDROID)
-        # Add SDL native init function, SDL_Main() entry point must be defined by one of the source files in ${SOURCE_FILES}
-        find_Urho3D_file (ANDROID_MAIN_C_PATH SDL_android_main.c
-            HINTS ${URHO3D_HOME}/include/Urho3D/ThirdParty/SDL/android ${CMAKE_SOURCE_DIR}/Source/ThirdParty/SDL/src/main/android
-            DOC "Path to SDL_android_main.c" MSG_MODE FATAL_ERROR)
-        list (APPEND SOURCE_FILES ${ANDROID_MAIN_C_PATH})
         # Setup shared library output path
         set_output_directories (${CMAKE_BINARY_DIR}/libs/${ANDROID_NDK_ABI_NAME} LIBRARY)
         # Setup target as main shared library
