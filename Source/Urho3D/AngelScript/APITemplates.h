@@ -57,7 +57,7 @@ class Camera;
 template <class T, class U> U* RefCast(T* t)
 {
     if (!t)
-        return 0;
+        return nullptr;
 
     return dynamic_cast<U*>(t);
 }
@@ -407,6 +407,8 @@ template <class T> void RegisterNamedObjectConstructor(asIScriptEngine* engine, 
     engine->RegisterObjectBehaviour(className, asBEHAVE_FACTORY, declFactoryWithName.CString(), asFUNCTION(ConstructNamedObject<T>), asCALL_CDECL);
 }
 
+static const AttributeInfo noAttributeInfo;
+
 // To keep Xcode LLVM/Clang happy - it erroneously warns on unused functions defined below which are actually being referenced in the code
 #if __clang__
 #pragma clang diagnostic push
@@ -415,8 +417,6 @@ template <class T> void RegisterNamedObjectConstructor(asIScriptEngine* engine, 
 
 static const AttributeInfo& SerializableGetAttributeInfo(unsigned index, Serializable* ptr)
 {
-    static const AttributeInfo noAttributeInfo;
-
     const Vector<AttributeInfo>* attributes = ptr->GetAttributes();
     if (!attributes || index >= attributes->Size())
     {
@@ -833,7 +833,7 @@ template <class T> void RegisterResource(asIScriptEngine* engine, const char* cl
     RegisterObject<T>(engine, className);
     RegisterSubclass<Resource, T>(engine, "Resource", className);
     // Do not register factory for the base class
-    if (strcmp("Resource", className))
+    if (strcmp("Resource", className) != 0)
     {
         RegisterObjectConstructor<T>(engine, className);
         RegisterNamedObjectConstructor<T>(engine, className);
