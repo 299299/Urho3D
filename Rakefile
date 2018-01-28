@@ -355,7 +355,7 @@ task :ci do
   jit = (ENV['WIN32'] && ENV['TRAVIS']) || ENV['WEB'] ? '' : 'JIT=1 URHO3D_LUAJIT_AMALG='
   system "cp -rp #{ENV['HOME']}/initial-build-tree #{ENV['build_tree']}" if ENV['OSX'] && ENV['CI'] && File.exist?("#{ENV['HOME']}/initial-build-tree/CMakeCache.txt")
   system "rake cmake #{generator} URHO3D_LUA#{jit}=1 URHO3D_DATABASE_SQLITE=1 URHO3D_EXTRAS=1" or abort 'Failed to configure Urho3D library build'
-  system "cp -rp #{ENV['build_tree']}/* #{ENV['HOME']}/initial-build-tree && rm -rf #{ENV['HOME']}/initial-build-tree/{bin,include}" if ENV['OSX'] && ENV['CI']
+  system "cp -rp #{ENV['build_tree']}/* #{ENV['HOME']}/initial-build-tree 2>/dev/null && rm -rf #{ENV['HOME']}/initial-build-tree/{bin,include} 2>/dev/null" if ENV['OSX'] && ENV['CI']
   next if timeup    # Measure the CMake configuration overhead
   if ENV['AVD'] && !ENV['PACKAGE_UPLOAD']   # Skip APK test run when packaging
     # Prepare a new AVD in another process to avoid busy waiting
@@ -574,7 +574,7 @@ task :ci_create_mirrors do
   # Limit the scanning to only master branch
   scan = ENV['TRAVIS_BRANCH'] == 'master'
   # Check if it is time to generate annotation
-  annotate = ENV['TRAVIS_BRANCH'] == 'master' && (ENV['PACKAGE_UPLOAD'] || /\[ci annotate\]/ =~ ENV['COMMIT_MESSAGE']) && /\[ci only:.*?\]/ !~ ENV['COMMIT_MESSAGE']
+  #annotate = ENV['TRAVIS_BRANCH'] == 'master' && (ENV['PACKAGE_UPLOAD'] || /\[ci annotate\]/ =~ ENV['COMMIT_MESSAGE']) && /\[ci only:.*?\]/ !~ ENV['COMMIT_MESSAGE']
   # Determine which CI mirror branches to be auto created
   unless ENV['RELEASE_TAG']
     skip_travis = /\[skip travis\]/ =~ ENV['COMMIT_MESSAGE']   # For feature parity with AppVeyor's [skip appveyor]
