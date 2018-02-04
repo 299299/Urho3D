@@ -113,11 +113,13 @@ template <class T> void RegisterStaticSprite2D(asIScriptEngine* engine, const ch
     engine->RegisterObjectMethod(className, "Sprite2D@+ get_sprite() const", asMETHOD(T, GetSprite), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "void set_blendMode(BlendMode)", asMETHOD(T, SetBlendMode), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "BlendMode get_blendMode() const", asMETHOD(T, GetBlendMode), asCALL_THISCALL);
-    engine->RegisterObjectMethod(className, "void SetFlip(bool, bool)", asMETHOD(T, SetFlip), asCALL_THISCALL);
+    engine->RegisterObjectMethod(className, "void SetFlip(bool, bool, bool swapXY = false)", asMETHOD(T, SetFlip), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "void set_flipX(bool)", asMETHOD(T, SetFlipX), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "bool get_flipX() const", asMETHOD(T, GetFlipX), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "void set_flipY(bool)", asMETHOD(T, SetFlipY), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "bool get_flipY() const", asMETHOD(T, GetFlipY), asCALL_THISCALL);
+    engine->RegisterObjectMethod(className, "void set_swapXY(bool)", asMETHOD(T, SetSwapXY), asCALL_THISCALL);
+    engine->RegisterObjectMethod(className, "bool get_swapXY() const", asMETHOD(T, GetSwapXY), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "void set_color(const Color&in)", asMETHOD(T, SetColor), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "const Color& get_color() const", asMETHOD(T, GetColor), asCALL_THISCALL);
     engine->RegisterObjectMethod(className, "void set_alpha(float)", asMETHOD(T, SetAlpha), asCALL_THISCALL);
@@ -255,8 +257,17 @@ static void RegisterTileMapDefs2D(asIScriptEngine* engine)
     engine->RegisterObjectMethod("PropertySet2D", "bool HasProperty(const String&in) const", asMETHOD(PropertySet2D, HasProperty), asCALL_THISCALL);
     engine->RegisterObjectMethod("PropertySet2D", "const String& GetProperty(const String&in) const", asMETHOD(PropertySet2D, HasProperty), asCALL_THISCALL);
 
+    engine->RegisterGlobalProperty("const uint FLIP_HORIZONTAL", (void*)&FLIP_HORIZONTAL);
+    engine->RegisterGlobalProperty("const uint FLIP_VERTICAL", (void*)&FLIP_VERTICAL);
+    engine->RegisterGlobalProperty("const uint FLIP_DIAGONAL", (void*)&FLIP_DIAGONAL);
+    engine->RegisterGlobalProperty("const uint FLIP_RESERVED", (void*)&FLIP_RESERVED);
+    engine->RegisterGlobalProperty("const uint FLIP_ALL", (void*)&FLIP_ALL);
+
     RegisterRefCounted<Tile2D>(engine, "Tile2D");
-    engine->RegisterObjectMethod("Tile2D", "int get_gid() const", asMETHOD(Tile2D, GetGid), asCALL_THISCALL);
+    engine->RegisterObjectMethod("Tile2D", "uint get_gid() const", asMETHOD(Tile2D, GetGid), asCALL_THISCALL);
+    engine->RegisterObjectMethod("Tile2D", "bool get_flipX() const", asMETHOD(Tile2D, GetFlipX), asCALL_THISCALL);
+    engine->RegisterObjectMethod("Tile2D", "bool get_flipY() const", asMETHOD(Tile2D, GetFlipY), asCALL_THISCALL);
+    engine->RegisterObjectMethod("Tile2D", "bool get_swapXY() const", asMETHOD(Tile2D, GetSwapXY), asCALL_THISCALL);
     engine->RegisterObjectMethod("Tile2D", "Sprite2D@+ get_sprite() const", asMETHOD(Tile2D, GetSprite), asCALL_THISCALL);
     engine->RegisterObjectMethod("Tile2D", "bool HasProperty(const String&in) const", asMETHOD(Tile2D, HasProperty), asCALL_THISCALL);
     engine->RegisterObjectMethod("Tile2D", "const String& GetProperty(const String&in) const", asMETHOD(Tile2D, HasProperty), asCALL_THISCALL);
@@ -269,7 +280,10 @@ static void RegisterTileMapDefs2D(asIScriptEngine* engine)
     engine->RegisterObjectMethod("TileMapObject2D", "const Vector2& get_size() const", asMETHOD(TileMapObject2D, GetSize), asCALL_THISCALL);
     engine->RegisterObjectMethod("TileMapObject2D", "uint get_numPoints() const", asMETHOD(TileMapObject2D, GetNumPoints), asCALL_THISCALL);
     engine->RegisterObjectMethod("TileMapObject2D", "const Vector2& GetPoint(uint) const", asMETHOD(TileMapObject2D, GetPoint), asCALL_THISCALL);
-    engine->RegisterObjectMethod("TileMapObject2D", "int get_tileGid() const", asMETHOD(TileMapObject2D, GetTileGid), asCALL_THISCALL);
+    engine->RegisterObjectMethod("TileMapObject2D", "uint get_tileGid() const", asMETHOD(TileMapObject2D, GetTileGid), asCALL_THISCALL);
+    engine->RegisterObjectMethod("TileMapObject2D", "bool get_tileFlipX() const", asMETHOD(TileMapObject2D, GetTileFlipX), asCALL_THISCALL);
+    engine->RegisterObjectMethod("TileMapObject2D", "bool get_tileFlipY() const", asMETHOD(TileMapObject2D, GetTileFlipY), asCALL_THISCALL);
+    engine->RegisterObjectMethod("TileMapObject2D", "bool get_tileSwapXY() const", asMETHOD(TileMapObject2D, GetTileSwapXY), asCALL_THISCALL);
     engine->RegisterObjectMethod("TileMapObject2D", "Sprite2D@+ get_tileSprite() const", asMETHOD(TileMapObject2D, GetTileSprite), asCALL_THISCALL);
     engine->RegisterObjectMethod("TileMapObject2D", "bool HasProperty(const String&in) const", asMETHOD(TileMapObject2D, HasProperty), asCALL_THISCALL);
     engine->RegisterObjectMethod("TileMapObject2D", "const String& GetProperty(const String&in) const", asMETHOD(TileMapObject2D, GetProperty), asCALL_THISCALL);
@@ -309,7 +323,7 @@ static void RegisterTileMapLayer2D(asIScriptEngine* engine)
     engine->RegisterObjectMethod("TileMapLayer2D", "Node@+ get_imageNode() const", asMETHOD(TileMapLayer2D, GetImageNode), asCALL_THISCALL);
 }
 
-static CScriptArray* TileMap2DGetTileCollisionShapes(int gid, TileMap2D* tileMap)
+static CScriptArray* TileMap2DGetTileCollisionShapes(unsigned gid, TileMap2D* tileMap)
 {
     Vector<SharedPtr<TileMapObject2D> > result = tileMap->GetTileCollisionShapes(gid);
     return VectorToArray<SharedPtr<TileMapObject2D> >(result, "Array<TileMapObject2D@>@");
@@ -324,7 +338,7 @@ static void RegisterTileMap2D(asIScriptEngine* engine)
     engine->RegisterObjectMethod("TileMap2D", "TileMapLayer2D@+ GetLayer(uint) const", asMETHOD(TileMap2D, GetLayer), asCALL_THISCALL);
     engine->RegisterObjectMethod("TileMap2D", "Vector2 TileIndexToPosition(int, int) const", asMETHOD(TileMap2D, TileIndexToPosition), asCALL_THISCALL);
     engine->RegisterObjectMethod("TileMap2D", "bool PositionToTileIndex(int&out x, int &out y, const Vector2&in) const", asMETHOD(TileMap2D, PositionToTileIndex), asCALL_THISCALL);
-    engine->RegisterObjectMethod("TileMap2D", "Array<TileMapObject2D@>@ GetTileCollisionShapes(int) const", asFUNCTION(TileMap2DGetTileCollisionShapes), asCALL_CDECL_OBJLAST);
+    engine->RegisterObjectMethod("TileMap2D", "Array<TileMapObject2D@>@ GetTileCollisionShapes(uint) const", asFUNCTION(TileMap2DGetTileCollisionShapes), asCALL_CDECL_OBJLAST);
 }
 
 static void RegisterRigidBody2D(asIScriptEngine* engine)
