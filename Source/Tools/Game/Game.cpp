@@ -28,8 +28,6 @@
 #include <Urho3D/IO/Log.h>
 
 #include "Game.h"
-#include "FSM.h"
-#include "GameObject.h"
 
 #include <Urho3D/DebugNew.h>
 

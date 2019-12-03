@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-TARGET_DIR='/Users/q392089/StudioProjects/build_android'
-SRC_DIR='/Users/q392089/Project/Urho3D/build_android'
+TARGET_DIR='/Users/mac/workspace/build_android'
+SRC_DIR='/Users/mac/Project/Urho3D/build_android'
 
 SRC_LIB=${SRC_DIR}/libs/armeabi-v7a/libUrho3DPlayer.so
 
