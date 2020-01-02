@@ -24,7 +24,7 @@
 set (TARGET_NAME Game)
 
 # Define source files
-define_source_files ()
+define_source_files (RECURSE GLOB_CPP_PATTERNS *.cpp)
 
 # Setup target with resource copying
 setup_main_executable (NOBUNDLE)
